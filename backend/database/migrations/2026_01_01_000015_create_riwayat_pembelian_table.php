@@ -30,6 +30,7 @@ return new class extends Migration
             $table->unsignedInteger('durasi')->nullable()->comment('Estimasi durasi pengantaran dalam menit');
             $table->timestamp('tanggal_pesan')->useCurrent();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

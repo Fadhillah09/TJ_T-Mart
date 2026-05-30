@@ -19,6 +19,10 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        DB::statement('DROP VIEW IF EXISTS produk_laris');
+        DB::statement('DROP VIEW IF EXISTS penjualan_tahunan');
+        DB::statement('DROP VIEW IF EXISTS penjualan_bulanan');
+
         DB::statement('
             CREATE VIEW penjualan_bulanan AS
             SELECT
