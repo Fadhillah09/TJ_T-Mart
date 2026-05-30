@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'role_id',
@@ -26,10 +28,14 @@ class User extends Authenticatable
         'active_mart_id',
         'lokasi_id',
         'status',
+        'email_verified_at',
+        'last_login_at',
+        'last_login_ip',
     ];
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     protected function casts(): array
@@ -37,7 +43,18 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'penghuni_asrama' => 'boolean',
+            'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (User $user) {
+            if ($user->wasChanged('password')) {
+                $user->tokens()->delete();
+            }
+        });
     }
 
     public function role(): BelongsTo

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GalonTransactionResource;
+use App\Http\Resources\NotifikasiResource;
 use App\Models\GalonTransaction;
+use App\Models\Notification;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +27,10 @@ class GalonTransactionController extends Controller
             ->latest('waktu_transaksi')
             ->paginate(10);
 
-        return $this->success($transactions, 'Riwayat galon berhasil diambil');
+        return $this->success(
+            GalonTransactionResource::collection($transactions)->response()->getData(true),
+            'Riwayat galon berhasil diambil'
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -34,27 +40,22 @@ class GalonTransactionController extends Controller
             'jumlah' => ['required', 'integer', 'min:1'],
             'metode_pembayaran' => ['required', 'in:COD,MIDTRANS'],
             'metode_pengiriman' => ['required', 'in:ambil,antar'],
-            'catatan' => ['nullable', 'string'],
+            'catatan' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $hargaSatuan = self::GALON_PRICES[$validated['nama_galon']];
-        $totalHarga = $hargaSatuan * $validated['jumlah'];
         $ongkir = $validated['metode_pengiriman'] === 'antar'
             ? self::ONGKIR_PER_GALON * $validated['jumlah']
             : 0;
-
-        $orderId = $validated['metode_pembayaran'] === 'MIDTRANS'
-            ? 'GL-'.strtoupper(uniqid())
-            : 'GL-'.strtoupper(uniqid());
 
         $transaction = GalonTransaction::create([
             'user_id' => $request->user()->id,
             'nama_galon' => $validated['nama_galon'],
             'harga_satuan' => $hargaSatuan,
             'jumlah' => $validated['jumlah'],
-            'total_harga' => $totalHarga + $ongkir,
+            'total_harga' => ($hargaSatuan * $validated['jumlah']) + $ongkir,
             'ongkir' => $ongkir,
-            'order_id' => $orderId,
+            'order_id' => 'GL-'.strtoupper(uniqid()),
             'catatan' => $validated['catatan'] ?? null,
             'status' => 'pending',
             'metode_pembayaran' => $validated['metode_pembayaran'],
@@ -69,7 +70,11 @@ class GalonTransactionController extends Controller
             'galon'
         );
 
-        return $this->success($transaction, 'Pesanan galon berhasil dibuat', 201);
+        return $this->success(
+            GalonTransactionResource::make($transaction),
+            'Pesanan galon berhasil dibuat',
+            201
+        );
     }
 
     public function adminIndex(Request $request): JsonResponse
@@ -80,7 +85,10 @@ class GalonTransactionController extends Controller
             ->latest('waktu_transaksi')
             ->paginate(15);
 
-        return $this->success($transactions, 'Daftar pesanan galon admin berhasil diambil');
+        return $this->success(
+            GalonTransactionResource::collection($transactions)->response()->getData(true),
+            'Daftar pesanan galon admin berhasil diambil'
+        );
     }
 
     public function updateStatus(Request $request, string $id): JsonResponse
@@ -95,6 +103,8 @@ class GalonTransactionController extends Controller
             return $this->error('Transaksi galon tidak ditemukan.', null, 404);
         }
 
+        $this->authorize('updateStatus', $transaction);
+
         $transaction->update(['status' => $validated['status']]);
 
         NotificationService::send(
@@ -104,6 +114,9 @@ class GalonTransactionController extends Controller
             'galon'
         );
 
-        return $this->success($transaction->fresh()->load('user'), 'Status pesanan galon berhasil diperbarui');
+        return $this->success(
+            GalonTransactionResource::make($transaction->fresh()->load('user')),
+            'Status pesanan galon berhasil diperbarui'
+        );
     }
 }

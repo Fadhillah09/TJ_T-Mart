@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NotifikasiResource;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class NotifikasiController extends Controller
 
         return $this->success([
             'unread_count' => $unreadCount,
-            'notifications' => $notifications,
+            'notifications' => NotifikasiResource::collection($notifications)->response()->getData(true),
         ], 'Notifikasi berhasil diambil');
     }
 
@@ -38,7 +39,7 @@ class NotifikasiController extends Controller
 
         $notification->update(['is_read' => true]);
 
-        return $this->success($notification, 'Notifikasi ditandai sudah dibaca');
+        return $this->success(NotifikasiResource::make($notification), 'Notifikasi ditandai sudah dibaca');
     }
 
     public function markAllRead(Request $request): JsonResponse

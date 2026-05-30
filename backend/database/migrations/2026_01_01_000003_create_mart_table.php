@@ -16,6 +16,7 @@ return new class extends Migration
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->boolean('is_active')->default(true)->comment('Flag cepat untuk filter UI');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

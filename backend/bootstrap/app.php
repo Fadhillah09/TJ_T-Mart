@@ -9,14 +9,19 @@ use Illuminate\Validation\ValidationException;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php', // Pastikan API aktif
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Daftarkan alias 'role' di sini
+        $middleware->append([
+            \App\Http\Middleware\SecurityHeaders::class,
+            \App\Http\Middleware\SanitizeInput::class,
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -28,5 +33,53 @@ return Application::configure(basePath: dirname(__DIR__))
                     'errors' => $e->errors(),
                 ], 422);
             }
+        });
+
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'Akses ditolak.',
+                    'errors' => (object) [],
+                ], 403);
+            }
+        });
+
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                    'errors' => (object) [],
+                ], 401);
+            }
+        });
+
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if (! $request->is('api/*') || config('app.debug')) {
+                return null;
+            }
+
+            if ($e instanceof ValidationException
+                || $e instanceof \Illuminate\Auth\Access\AuthorizationException
+                || $e instanceof \Illuminate\Auth\AuthenticationException) {
+                return null;
+            }
+
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'Permintaan gagal.',
+                    'errors' => (object) [],
+                ], $e->getStatusCode());
+            }
+
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan server.',
+                'errors' => (object) [],
+            ], 500);
         });
     })->create();

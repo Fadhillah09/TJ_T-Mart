@@ -15,24 +15,34 @@ use App\Http\Controllers\Api\TokenTransactionController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+});
 
-// Authenticated routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::get('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware(['signed', 'throttle:auth'])
+    ->name('verification.verify');
+
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-    Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);
+    Route::post('/auth/email/resend', [AuthController::class, 'resendVerification'])
+        ->middleware('throttle:auth');
+    Route::get('/auth/me', [AuthController::class, 'me'])->middleware('verified');
+});
 
-    Route::get('/mart', [MartController::class, 'index']);
-    Route::get('/mart/{id}', [MartController::class, 'show']);
-    Route::get('/produk', [ProdukController::class, 'index']);
-    Route::get('/produk/{id}', [ProdukController::class, 'show']);
-    Route::get('/kategori', [KategoriProdukController::class, 'index']);
-    Route::get('/banner', [BannerController::class, 'index']);
-    Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
+Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
+    Route::middleware('throttle:public')->group(function () {
+        Route::get('/mart', [MartController::class, 'index']);
+        Route::get('/mart/{id}', [MartController::class, 'show']);
+        Route::get('/produk', [ProdukController::class, 'index']);
+        Route::get('/produk/{id}', [ProdukController::class, 'show']);
+        Route::get('/kategori', [KategoriProdukController::class, 'index']);
+        Route::get('/banner', [BannerController::class, 'index']);
+        Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
+    });
 
-    // Customer routes
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);
     Route::put('/cart/{id}', [CartController::class, 'update']);
@@ -51,11 +61,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead']);
     Route::put('/notifikasi/read-all', [NotifikasiController::class, 'markAllRead']);
 
-    // Absensi (admin & kurir)
     Route::post('/absensi', [AbsensiController::class, 'store'])
         ->middleware('role:admin,superadmin,kurir');
 
-    // Admin routes
     Route::middleware('role:admin,superadmin')->group(function () {
         Route::get('/admin/produk', [ProdukController::class, 'adminIndex']);
         Route::post('/admin/produk', [ProdukController::class, 'store']);
