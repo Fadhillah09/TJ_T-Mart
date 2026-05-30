@@ -17,4 +17,11 @@ class StoreAbsensiRequest extends FormRequest
             'koordinat_absen' => ['required', 'string', 'regex:/^-?\d+\.\d+,-?\d+\.\d+$/'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'koordinat_absen.regex' => 'Format koordinat tidak valid. Gunakan format: latitude,longitude (contoh: -6.200000,106.816666).',
+        ];
+    }
 }
