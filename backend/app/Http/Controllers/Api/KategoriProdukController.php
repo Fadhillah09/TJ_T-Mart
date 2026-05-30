@@ -11,7 +11,7 @@ class KategoriProdukController extends Controller
     public function index(): JsonResponse
     {
         $kategori = KategoriProduk::query()
-            ->withCount('produks')
+            ->withCount(['produks as produk_count' => fn ($q) => $q->where('is_active', true)])
             ->orderBy('nama_kategori')
             ->get();
 
