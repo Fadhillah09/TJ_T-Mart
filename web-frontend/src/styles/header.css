@@ -1,0 +1,219 @@
+    .nav-icon-btn {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        border-radius: 9999px;
+        overflow: visible;
+    }
+
+    .nav-icon-btn .icon-layer {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-icon-btn .shine-layer {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .nav-icon-btn .shine-layer::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -60%;
+        width: 20%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.4);
+        transform: rotate(30deg);
+        transition: none;
+    }
+
+    .nav-icon-btn:not(.active):hover .shine-layer::after {
+        left: 120%;
+        transition: all 0.6s ease-in-out;
+    }
+
+    .nav-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        font-size: 10px;
+        font-weight: 600;
+        border-radius: 9999px;
+        background: #DB4B3A;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+        pointer-events: none;
+        ring: 2px solid white;
+    }
+
+    .nav-icon-btn.active {
+        background: #dc2626;
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+    }
+
+    .btn-active-scale:active {
+        transform: scale(0.92);
+    }
+
+    .nav-icon-btn:not(.active):hover {
+        background-color: #fee2e2; 
+        color: #b91c1c; 
+        border: 1px solid #fecaca;
+    }
+
+    .logo-animate {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(90deg, #dc2626, #5B000B);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .search-container-focus {
+        box-shadow: 0 0 15px rgba(220, 38, 38, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .shine-mobile {
+        position: relative;
+        overflow: hidden;
+    }
+    .shine-mobile::after {
+        content: "";
+        position: absolute;
+        top: -50%; left: -60%;
+        width: 20%; height: 200%;
+        background: rgba(255, 255, 255, 0.4);
+        transform: rotate(30deg);
+        transition: none;
+    }
+    .shine-mobile:hover::after {
+        left: 120%;
+        transition: all 0.6s ease-in-out;
+    }
+
+    input:focus {
+    outline: none !important;
+    }
+
+    input:focus-visible {
+        outline: none !important;
+    }
+
+    .profile-btn-active {
+        background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+    }
+
+    .profile-btn-idle {
+        color: #1a1a1a;
+        background: white;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .profile-btn-idle:hover {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border-color: #DB4B3A;
+        box-shadow: 0 2px 10px rgba(220, 38, 38, 0.1);
+    }
+
+    .dropdown-item-red {
+        color: #1a1a1a;
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .dropdown-item-red:hover {
+        background-color: #fee2e2 !important;
+        color: #b91c1c !important;
+        border-left: 3px solid #dc2626;
+        padding-left: 1.25rem !important;
+    }
+
+    .dropdown-logout {
+        background-color: transparent;
+        color: #dc2626 !important;
+        transition: all 0.3s ease;
+    }
+
+    .dropdown-logout:hover {
+        background-color: #dc2626 !important;
+        color: white !important;
+    }
+
+    .profile-icon-container {
+        position: relative;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-active-scale:hover .profile-icon-container {
+        transform: scale(1.1);
+    }
+
+    .mobile-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        color: #1a1a1a;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 0px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mobile-link:hover {
+        background: linear-gradient(90deg, #fee2e2 0%, transparent 100%);
+        color: #dc2626;
+        border-left: 4px solid #dc2626;
+        padding-left: 1.25rem;
+    }
+
+    .mobile-link:active {
+        background-color: #fecaca;
+        transform: scale(0.98);
+    }
+
+    .mobile-search-input {
+        border: 1px solid #5B000B !important;
+        transition: all 0.3s ease;
+        background-color: #f9fafb;
+    }
+
+    .mobile-search-input:focus {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1) !important;
+        background-color: white;
+    }
+
+    .mobile-menu-item {
+        opacity: 0;
+        transform: translateX(-10px);
+        animation: slideInMobile 0.3s forwards;
+    }
+
+    @keyframes slideInMobile {
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
