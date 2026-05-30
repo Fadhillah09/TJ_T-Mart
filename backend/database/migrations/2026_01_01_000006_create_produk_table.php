@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('gambar')->nullable()->comment('Path gambar utama produk');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
