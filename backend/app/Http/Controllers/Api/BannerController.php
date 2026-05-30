@@ -8,6 +8,17 @@ use Illuminate\Http\JsonResponse;
 
 class BannerController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/banner",
+     *     tags={"Public"},
+     *     summary="List active banners",
+     *     description="Returns banners ordered by sort_order ascending.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(response=200, description="Banner list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(): JsonResponse
     {
         $banners = Banner::query()

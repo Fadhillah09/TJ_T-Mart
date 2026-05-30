@@ -29,7 +29,7 @@ class RiwayatPembelianController extends Controller
      *     path="/riwayat-pembelian",
      *     tags={"Orders"},
      *     summary="List authenticated user's orders",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"pending","processing","delivering","completed","cancelled"})),
      *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer")),
@@ -58,7 +58,7 @@ class RiwayatPembelianController extends Controller
      *     tags={"Orders"},
      *     summary="Create order (checkout)",
      *     description="Server-side price calculation, stock deduction, cart clearing, and notification in a DB transaction.",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CheckoutRequest")),
      *
@@ -161,7 +161,7 @@ class RiwayatPembelianController extends Controller
      *     path="/riwayat-pembelian/{id}",
      *     tags={"Orders"},
      *     summary="Get order detail",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
@@ -195,7 +195,7 @@ class RiwayatPembelianController extends Controller
      *     path="/admin/riwayat-pembelian",
      *     tags={"Admin","Orders"},
      *     summary="Admin: list all orders with filters",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
      *     @OA\Parameter(name="mart_id", in="query", @OA\Schema(type="integer")),
@@ -233,7 +233,7 @@ class RiwayatPembelianController extends Controller
      *     path="/admin/riwayat-pembelian/{id}/status",
      *     tags={"Admin","Orders"},
      *     summary="Admin: update order status",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *

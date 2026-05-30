@@ -19,7 +19,7 @@ class AbsensiController extends Controller
      *     tags={"Absensi"},
      *     summary="Check in or check out attendance",
      *     description="Staff only (admin, superadmin, kurir). First call = check-in, second = check-out. Returns 409 if already complete.",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AbsensiRequest")),
      *
@@ -75,7 +75,7 @@ class AbsensiController extends Controller
      *     path="/admin/absensi",
      *     tags={"Admin","Absensi"},
      *     summary="Admin: list attendance records",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="user_id", in="query", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="tanggal", in="query", description="Y-m-d format", @OA\Schema(type="string", format="date")),
