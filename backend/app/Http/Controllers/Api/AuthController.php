@@ -16,7 +16,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', Password::min(8)],
             'phone' => ['nullable', 'string', 'max:20'],
             'nomor_kamar' => ['nullable', 'string', 'max:10'],
             'penghuni_asrama' => ['nullable', 'boolean'],
@@ -35,12 +35,11 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Registrasi berhasil',
+        return $this->success([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user->load('role'),
-        ], 201);
+        ], 'Registrasi berhasil', 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -53,40 +52,37 @@ class AuthController extends Controller
         $user = User::with(['role', 'activeMart'])->where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Email atau password salah.',
-            ], 401);
+            return $this->error('Email atau password salah.', null, 401);
+        }
+
+        if ($user->status === 'suspended') {
+            return $this->error('Akun kamu disuspend', null, 403);
         }
 
         if ($user->status !== 'aktif') {
-            return response()->json([
-                'message' => 'Akun tidak aktif.',
-            ], 403);
+            return $this->error('Akun tidak aktif.', null, 403);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Login berhasil',
+        return $this->success([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user,
-        ]);
+        ], 'Login berhasil');
     }
 
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Logout berhasil',
-        ]);
+        return $this->success(null, 'Logout berhasil');
     }
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json([
-            'user' => $request->user()->load(['role', 'activeMart']),
-        ]);
+        $user = $request->user()->load(['role', 'activeMart', 'lokasi']);
+
+        return $this->success(['user' => $user], 'Profil berhasil diambil');
     }
 }
