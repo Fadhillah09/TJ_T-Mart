@@ -3,20 +3,57 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Mart extends Model
 {
-    protected $table = 'mart'; 
-    protected $fillable = ['nama_mart', 'alamat', 'deskripsi', 'is_active'];
+    protected $table = 'mart';
 
-    // Relasi ke profil karyawan (untuk APK Mobile)
-    public function karyawan()
+    protected $fillable = [
+        'nama_mart',
+        'alamat',
+        'deskripsi',
+        'status',
+        'is_active',
+    ];
+
+    protected function casts(): array
     {
-        return $this->hasMany(KaryawanProfile::class, 'mart_id');
+        return [
+            'is_active' => 'boolean',
+        ];
     }
 
-    public function produk()
+    public function lokasis(): HasMany
     {
-        return $this->belongsToMany(Produk::class, 'produk_mart', 'mart_id', 'produk_id');
+        return $this->hasMany(LokasiDelivery::class, 'mart_id');
+    }
+
+    public function admins(): HasMany
+    {
+        return $this->hasMany(Admin::class);
+    }
+
+    public function produkMarts(): HasMany
+    {
+        return $this->hasMany(ProdukMart::class);
+    }
+
+    public function penjualans(): HasMany
+    {
+        return $this->hasMany(Penjualan::class);
+    }
+
+    public function usersWithActiveMart(): HasMany
+    {
+        return $this->hasMany(User::class, 'active_mart_id');
+    }
+
+    public function produks(): BelongsToMany
+    {
+        return $this->belongsToMany(Produk::class, 'produk_mart')
+            ->withPivot(['stok_lokal', 'harga_lokal'])
+            ->withTimestamps();
     }
 }
