@@ -1,0 +1,469 @@
+{
+  "info": {
+    "_postman_id": "tj-t-mart-api-collection",
+    "name": "TJ-T-Mart API",
+    "description": "Complete API collection for TJ-T-Mart campus dormitory mini-mart backend.\n\n## Setup\n1. Set `base_url` to `http://localhost:8000/api`\n2. Run **Auth > Login** — token is saved automatically to `{{token}}`\n3. All protected routes use Bearer `{{token}}`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"newuser@tjmart.com\",\n  \"password\": \"Password1a\",\n  \"password_confirmation\": \"Password1a\",\n  \"phone\": \"081234567890\",\n  \"nomor_kamar\": \"A-101\",\n  \"penghuni_asrama\": true\n}"
+            },
+            "url": "{{base_url}}/auth/register"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('token', json.data.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@tjmart.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": { "method": "GET", "url": "{{base_url}}/auth/me" },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": { "method": "POST", "url": "{{base_url}}/auth/logout" },
+          "response": []
+        },
+        {
+          "name": "Logout All",
+          "request": { "method": "POST", "url": "{{base_url}}/auth/logout-all" },
+          "response": []
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": { "method": "POST", "url": "{{base_url}}/auth/email/resend" },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Produk",
+      "item": [
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/produk?kategori_id=&search=&mart_id=&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["produk"],
+              "query": [
+                { "key": "kategori_id", "value": "" },
+                { "key": "search", "value": "" },
+                { "key": "mart_id", "value": "" },
+                { "key": "page", "value": "1" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Product Detail",
+          "request": { "method": "GET", "url": "{{base_url}}/produk/1" },
+          "response": []
+        },
+        {
+          "name": "List Categories",
+          "request": { "method": "GET", "url": "{{base_url}}/kategori" },
+          "response": []
+        },
+        {
+          "name": "List Banners",
+          "request": { "method": "GET", "url": "{{base_url}}/banner" },
+          "response": []
+        },
+        {
+          "name": "List Marts",
+          "request": { "method": "GET", "url": "{{base_url}}/mart" },
+          "response": []
+        },
+        {
+          "name": "List Delivery Locations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/lokasi?mart_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["lokasi"],
+              "query": [{ "key": "mart_id", "value": "1" }]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": { "method": "GET", "url": "{{base_url}}/cart" },
+          "response": []
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"produk_id\": 1,\n  \"quantity\": 2\n}"
+            },
+            "url": "{{base_url}}/cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": "{{base_url}}/cart/1"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": { "method": "DELETE", "url": "{{base_url}}/cart/1" },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/riwayat-pembelian?status=",
+              "host": ["{{base_url}}"],
+              "path": ["riwayat-pembelian"],
+              "query": [{ "key": "status", "value": "" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout (Create Order)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipe_layanan\": \"delivery\",\n  \"metode_pembayaran\": \"COD\",\n  \"alamat_pengantaran\": \"Asrama TJ Blok A Kamar 101\",\n  \"items\": [\n    { \"produk_id\": 1, \"quantity\": 2 }\n  ]\n}"
+            },
+            "url": "{{base_url}}/riwayat-pembelian"
+          },
+          "response": []
+        },
+        {
+          "name": "Order Detail",
+          "request": { "method": "GET", "url": "{{base_url}}/riwayat-pembelian/1" },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Galon",
+      "item": [
+        {
+          "name": "List My Galon Orders",
+          "request": { "method": "GET", "url": "{{base_url}}/galon" },
+          "response": []
+        },
+        {
+          "name": "Create Galon Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama_galon\": \"Galon 19L (Isi Ulang)\",\n  \"jumlah\": 2,\n  \"metode_pembayaran\": \"COD\",\n  \"metode_pengiriman\": \"antar\",\n  \"catatan\": \"Antar ke kamar A-101\"\n}"
+            },
+            "url": "{{base_url}}/galon"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Token",
+      "item": [
+        {
+          "name": "List My Token Purchases",
+          "request": { "method": "GET", "url": "{{base_url}}/token" },
+          "response": []
+        },
+        {
+          "name": "Purchase Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nominal\": 50000,\n  \"metode_pembayaran\": \"COD\"\n}"
+            },
+            "url": "{{base_url}}/token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Absensi",
+      "item": [
+        {
+          "name": "Check In / Check Out",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"koordinat_absen\": \"-6.200000,106.816666\"\n}"
+            },
+            "url": "{{base_url}}/absensi"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifikasi",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": { "method": "GET", "url": "{{base_url}}/notifikasi" },
+          "response": []
+        },
+        {
+          "name": "Mark as Read",
+          "request": { "method": "PUT", "url": "{{base_url}}/notifikasi/1/read" },
+          "response": []
+        },
+        {
+          "name": "Mark All Read",
+          "request": { "method": "PUT", "url": "{{base_url}}/notifikasi/read-all" },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('token', json.data.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@tjmart.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "List All Products",
+          "request": { "method": "GET", "url": "{{base_url}}/admin/produk" },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "nama_produk", "value": "Indomie Goreng", "type": "text" },
+                { "key": "kategori_id", "value": "1", "type": "text" },
+                { "key": "harga", "value": "3500", "type": "text" },
+                { "key": "stok", "value": "100", "type": "text" },
+                { "key": "deskripsi", "value": "Mie instan", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/admin/produk"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "nama_produk", "value": "Indomie Goreng Updated", "type": "text" },
+                { "key": "harga", "value": "4000", "type": "text" },
+                { "key": "stok", "value": "90", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/admin/produk/1"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": { "method": "DELETE", "url": "{{base_url}}/admin/produk/1" },
+          "response": []
+        },
+        {
+          "name": "List All Orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/riwayat-pembelian?status=&mart_id=&date_from=&date_to=",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "riwayat-pembelian"],
+              "query": [
+                { "key": "status", "value": "" },
+                { "key": "mart_id", "value": "" },
+                { "key": "date_from", "value": "" },
+                { "key": "date_to", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"processing\"\n}"
+            },
+            "url": "{{base_url}}/admin/riwayat-pembelian/1/status"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status (Delivering)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"delivering\",\n  \"kurir_id\": 3\n}"
+            },
+            "url": "{{base_url}}/admin/riwayat-pembelian/1/status"
+          },
+          "response": []
+        },
+        {
+          "name": "List All Galon Orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/galon?status=&metode_pengiriman=",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "galon"],
+              "query": [
+                { "key": "status", "value": "" },
+                { "key": "metode_pengiriman", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Galon Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"delivering\"\n}"
+            },
+            "url": "{{base_url}}/admin/galon/1/status"
+          },
+          "response": []
+        },
+        {
+          "name": "List Attendance",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/absensi?user_id=&tanggal=&status=",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "absensi"],
+              "query": [
+                { "key": "user_id", "value": "" },
+                { "key": "tanggal", "value": "2026-05-30" },
+                { "key": "status", "value": "" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -21,6 +21,18 @@ class AuthController extends Controller
         private readonly LoginSecurityService $loginSecurity
     ) {}
 
+    /**
+     * @OA\Post(
+     *     path="/auth/register",
+     *     tags={"Auth"},
+     *     summary="Register a new customer account",
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/RegisterRequest")),
+     *
+     *     @OA\Response(response=201, description="Registration successful", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=422, description="Validation error", @OA\JsonContent(ref="#/components/schemas/ApiErrorResponse"))
+     * )
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -45,6 +57,34 @@ class AuthController extends Controller
         ], 'Registrasi berhasil. Silakan verifikasi email Anda.', 201);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/auth/login",
+     *     tags={"Auth"},
+     *     summary="Login and obtain Bearer token",
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/LoginRequest")),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Login berhasil"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="access_token", type="string", example="1|abc123token"),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Invalid credentials"),
+     *     @OA\Response(response=429, description="Account locked after failed attempts")
+     * )
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $email = $request->input('email');
@@ -88,6 +128,16 @@ class AuthController extends Controller
         ], 'Login berhasil');
     }
 
+    /**
+     * @OA\Post(
+     *     path="/auth/logout",
+     *     tags={"Auth"},
+     *     summary="Revoke current access token",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Logout successful", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -97,6 +147,16 @@ class AuthController extends Controller
         return $this->success(null, 'Logout berhasil');
     }
 
+    /**
+     * @OA\Post(
+     *     path="/auth/logout-all",
+     *     tags={"Auth"},
+     *     summary="Revoke all access tokens for the user",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="All sessions terminated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function logoutAll(Request $request): JsonResponse
     {
         $request->user()->tokens()->delete();
@@ -106,6 +166,17 @@ class AuthController extends Controller
         return $this->success(null, 'Semua sesi berhasil diakhiri');
     }
 
+    /**
+     * @OA\Get(
+     *     path="/auth/me",
+     *     tags={"Auth"},
+     *     summary="Get authenticated user profile",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Profile retrieved", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=403, description="Email not verified")
+     * )
+     */
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()->load(['role', 'activeMart', 'lokasi']);

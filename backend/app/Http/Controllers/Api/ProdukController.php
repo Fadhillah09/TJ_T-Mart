@@ -22,6 +22,21 @@ class ProdukController extends Controller
         private readonly FileUploadService $fileUploadService
     ) {}
 
+    /**
+     * @OA\Get(
+     *     path="/produk",
+     *     tags={"Produk","Public"},
+     *     summary="List active products with filters",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="kategori_id", in="query", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="search", in="query", description="Search by product name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="mart_id", in="query", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer", default=1)),
+     *
+     *     @OA\Response(response=200, description="Paginated product list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user('sanctum');
@@ -54,6 +69,19 @@ class ProdukController extends Controller
         );
     }
 
+    /**
+     * @OA\Get(
+     *     path="/produk/{id}",
+     *     tags={"Produk","Public"},
+     *     summary="Get product detail",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Product detail", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function show(Request $request, string $id): JsonResponse
     {
         $produk = Produk::query()
@@ -79,6 +107,16 @@ class ProdukController extends Controller
         return $this->success(ProdukResource::make($produk), 'Detail produk berhasil diambil');
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/produk",
+     *     tags={"Admin","Produk"},
+     *     summary="Admin: list all products",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Admin product list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function adminIndex(Request $request): JsonResponse
     {
         $this->authorize('create', Produk::class);
@@ -96,6 +134,35 @@ class ProdukController extends Controller
         );
     }
 
+    /**
+     * @OA\Post(
+     *     path="/admin/produk",
+     *     tags={"Admin","Produk"},
+     *     summary="Admin: create product",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *
+     *             @OA\Schema(
+     *                 required={"nama_produk","kategori_id","harga","stok"},
+     *
+     *                 @OA\Property(property="nama_produk", type="string"),
+     *                 @OA\Property(property="kategori_id", type="integer"),
+     *                 @OA\Property(property="harga", type="number"),
+     *                 @OA\Property(property="stok", type="integer"),
+     *                 @OA\Property(property="deskripsi", type="string"),
+     *                 @OA\Property(property="gambar", type="string", format="binary")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=201, description="Product created", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function store(StoreProdukRequest $request): JsonResponse
     {
         $validated = $request->validated();

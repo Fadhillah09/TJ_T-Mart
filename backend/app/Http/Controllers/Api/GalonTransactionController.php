@@ -22,6 +22,16 @@ class GalonTransactionController extends Controller
 
     private const ONGKIR_PER_GALON = 3000;
 
+    /**
+     * @OA\Get(
+     *     path="/galon",
+     *     tags={"Galon"},
+     *     summary="List user's galon transactions",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Paginated galon history", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $transactions = GalonTransaction::query()
@@ -35,6 +45,19 @@ class GalonTransactionController extends Controller
         );
     }
 
+    /**
+     * @OA\Post(
+     *     path="/galon",
+     *     tags={"Galon"},
+     *     summary="Create galon water order",
+     *     description="Prices calculated server-side. Galon Baru + Isi = 45000, Isi Ulang = 18000. Delivery fee 3000/gallon for 'antar'.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/GalonRequest")),
+     *
+     *     @OA\Response(response=201, description="Galon order created", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function store(StoreGalonRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -77,6 +100,19 @@ class GalonTransactionController extends Controller
         );
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/galon",
+     *     tags={"Admin","Galon"},
+     *     summary="Admin: list all galon transactions",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="metode_pengiriman", in="query", @OA\Schema(type="string", enum={"ambil","antar"})),
+     *
+     *     @OA\Response(response=200, description="Admin galon list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function adminIndex(Request $request): JsonResponse
     {
         $transactions = GalonTransaction::query()
@@ -92,6 +128,28 @@ class GalonTransactionController extends Controller
         );
     }
 
+    /**
+     * @OA\Put(
+     *     path="/admin/galon/{id}/status",
+     *     tags={"Admin","Galon"},
+     *     summary="Admin: update galon order status",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *
+     *             @OA\Property(property="status", type="string", enum={"pending","paid","delivering","completed","cancelled"})
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=200, description="Status updated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function updateStatus(UpdateGalonStatusRequest $request, string $id): JsonResponse
     {
         $validated = $request->validated();

@@ -16,6 +16,16 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/cart",
+     *     tags={"Cart"},
+     *     summary="Get current user's cart",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Cart with items and total_harga", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $cart = $this->getOrCreateCart($request->user()->id);
@@ -24,6 +34,19 @@ class CartController extends Controller
         return $this->success(CartResource::make($cart), 'Keranjang berhasil diambil');
     }
 
+    /**
+     * @OA\Post(
+     *     path="/cart",
+     *     tags={"Cart"},
+     *     summary="Add product to cart",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CartItemRequest")),
+     *
+     *     @OA\Response(response=201, description="Item added", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=422, description="Insufficient stock")
+     * )
+     */
     public function store(StoreCartItemRequest $request): JsonResponse
     {
         $validated = $request->validated();
