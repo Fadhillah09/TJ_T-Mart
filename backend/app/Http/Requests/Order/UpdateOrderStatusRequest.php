@@ -8,9 +8,7 @@ class UpdateOrderStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->can('updateStatus', $this->route('id')
-            ? \App\Models\RiwayatPembelian::find($this->route('id'))
-            : null);
+        return in_array($this->user()?->role?->name, ['admin', 'superadmin'], true);
     }
 
     public function rules(): array
