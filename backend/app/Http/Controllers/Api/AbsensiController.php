@@ -13,6 +13,20 @@ use Illuminate\Support\Facades\DB;
 
 class AbsensiController extends Controller
 {
+    /**
+     * @OA\Post(
+     *     path="/absensi",
+     *     tags={"Absensi"},
+     *     summary="Check in or check out attendance",
+     *     description="Staff only (admin, superadmin, kurir). First call = check-in, second = check-out. Returns 409 if already complete.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/AbsensiRequest")),
+     *
+     *     @OA\Response(response=201, description="Check-in recorded", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=409, description="Attendance already complete for today")
+     * )
+     */
     public function store(StoreAbsensiRequest $request): JsonResponse
     {
         $this->authorize('create', Absensi::class);
@@ -56,6 +70,20 @@ class AbsensiController extends Controller
         });
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/absensi",
+     *     tags={"Admin","Absensi"},
+     *     summary="Admin: list attendance records",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="user_id", in="query", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="tanggal", in="query", description="Y-m-d format", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"tepat_waktu","terlambat","mangkir"})),
+     *
+     *     @OA\Response(response=200, description="Paginated attendance list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Absensi::class);

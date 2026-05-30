@@ -24,6 +24,19 @@ class RiwayatPembelianController extends Controller
 {
     private const ONGKIR_DELIVERY = 5000;
 
+    /**
+     * @OA\Get(
+     *     path="/riwayat-pembelian",
+     *     tags={"Orders"},
+     *     summary="List authenticated user's orders",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"pending","processing","delivering","completed","cancelled"})),
+     *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Paginated order history", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $orders = RiwayatPembelian::query()
@@ -39,6 +52,20 @@ class RiwayatPembelianController extends Controller
         );
     }
 
+    /**
+     * @OA\Post(
+     *     path="/riwayat-pembelian",
+     *     tags={"Orders"},
+     *     summary="Create order (checkout)",
+     *     description="Server-side price calculation, stock deduction, cart clearing, and notification in a DB transaction.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CheckoutRequest")),
+     *
+     *     @OA\Response(response=201, description="Order created", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=422, description="Insufficient stock or invalid items")
+     * )
+     */
     public function store(StoreRiwayatPembelianRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -129,6 +156,20 @@ class RiwayatPembelianController extends Controller
         );
     }
 
+    /**
+     * @OA\Get(
+     *     path="/riwayat-pembelian/{id}",
+     *     tags={"Orders"},
+     *     summary="Get order detail",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Order detail", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
     public function show(Request $request, string $id): JsonResponse
     {
         $order = RiwayatPembelian::with([
@@ -149,6 +190,21 @@ class RiwayatPembelianController extends Controller
         );
     }
 
+    /**
+     * @OA\Get(
+     *     path="/admin/riwayat-pembelian",
+     *     tags={"Admin","Orders"},
+     *     summary="Admin: list all orders with filters",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="mart_id", in="query", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="date_from", in="query", @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="date_to", in="query", @OA\Schema(type="string", format="date")),
+     *
+     *     @OA\Response(response=200, description="Paginated admin orders", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function adminIndex(Request $request): JsonResponse
     {
         $orders = RiwayatPembelian::query()
@@ -172,6 +228,20 @@ class RiwayatPembelianController extends Controller
         );
     }
 
+    /**
+     * @OA\Put(
+     *     path="/admin/riwayat-pembelian/{id}/status",
+     *     tags={"Admin","Orders"},
+     *     summary="Admin: update order status",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateOrderStatusRequest")),
+     *
+     *     @OA\Response(response=200, description="Status updated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function updateStatus(UpdateOrderStatusRequest $request, string $id): JsonResponse
     {
         $validated = $request->validated();

@@ -14,6 +14,16 @@ use Illuminate\Support\Facades\DB;
 
 class TokenTransactionController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/token",
+     *     tags={"Token"},
+     *     summary="List user's token transactions",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\Response(response=200, description="Paginated token history", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(Request $request): JsonResponse
     {
         $transactions = TokenTransaction::query()
@@ -27,6 +37,19 @@ class TokenTransactionController extends Controller
         );
     }
 
+    /**
+     * @OA\Post(
+     *     path="/token",
+     *     tags={"Token"},
+     *     summary="Purchase electricity token",
+     *     description="Generates a 20-digit token instantly. Status set to completed.",
+     *     security={{"sanctum":{}}},
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/TokenRequest")),
+     *
+     *     @OA\Response(response=201, description="Token purchased", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function store(StoreTokenRequest $request): JsonResponse
     {
         $validated = $request->validated();
