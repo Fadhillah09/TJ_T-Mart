@@ -15,7 +15,7 @@ class NotifikasiController extends Controller
      *     tags={"Notifikasi"},
      *     summary="List user notifications",
      *     description="Includes unread_count in meta. Paginated 20/page.",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Notification list with meta.unread_count", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -51,7 +51,7 @@ class NotifikasiController extends Controller
      *     tags={"Notifikasi"},
      *     summary="Mark notification as read",
      *     description="IDOR-protected: only the notification owner can mark it read.",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
@@ -73,7 +73,7 @@ class NotifikasiController extends Controller
      *     path="/notifikasi/read-all",
      *     tags={"Notifikasi"},
      *     summary="Mark all notifications as read",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="All marked as read", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )

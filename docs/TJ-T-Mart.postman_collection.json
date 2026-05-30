@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "tj-t-mart-api-collection",
+    "_postman_id": "tj-t-mart-api-v2",
     "name": "TJ-T-Mart API",
-    "description": "Complete API collection for TJ-T-Mart campus dormitory mini-mart backend.\n\n## Setup\n1. Set `base_url` to `http://localhost:8000/api`\n2. Run **Auth > Login** — token is saved automatically to `{{token}}`\n3. All protected routes use Bearer `{{token}}`",
+    "description": "REST API collection for TJ-T-Mart dormitory mini-mart.\n\nImport environment: docs/TJ-T-Mart.postman_environment.json\nRun Auth > Login first to auto-save {{token}}.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -29,24 +29,31 @@
             },
             "url": "{{base_url}}/auth/register"
           },
-          "response": []
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": { \"user\": { \"id\": 1, \"name\": \"Test User\", \"email\": \"newuser@tjmart.com\" } },\n  \"message\": \"Registrasi berhasil. Silakan verifikasi email Anda.\"\n}"
+            }
+          ]
         },
         {
           "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.data && json.data.access_token) {",
-                  "  pm.collectionVariables.set('token', json.data.access_token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data && json.data.access_token) {",
+                "  pm.collectionVariables.set('token', json.data.access_token);",
+                "  pm.environment.set('token', json.data.access_token);",
+                "}"
+              ],
+              "type": "text/javascript"
             }
-          ],
+          }],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -57,26 +64,62 @@
             },
             "url": "{{base_url}}/auth/login"
           },
-          "response": []
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"access_token\": \"1|abc123token\",\n    \"token_type\": \"Bearer\",\n    \"user\": { \"id\": 4, \"name\": \"Customer\", \"email\": \"customer@tjmart.com\" }\n  },\n  \"message\": \"Login berhasil\"\n}"
+            }
+          ]
         },
         {
           "name": "Me",
-          "request": { "method": "GET", "url": "{{base_url}}/auth/me" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/auth/me"
+          },
           "response": []
         },
         {
           "name": "Logout",
-          "request": { "method": "POST", "url": "{{base_url}}/auth/logout" },
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/auth/logout"
+          },
           "response": []
         },
         {
           "name": "Logout All",
-          "request": { "method": "POST", "url": "{{base_url}}/auth/logout-all" },
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/auth/logout-all"
+          },
           "response": []
         },
         {
           "name": "Resend Verification Email",
-          "request": { "method": "POST", "url": "{{base_url}}/auth/email/resend" },
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/auth/email/resend"
+          },
           "response": []
         }
       ]
@@ -88,6 +131,10 @@
           "name": "List Products",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{base_url}}/produk?kategori_id=&search=&mart_id=&page=1",
               "host": ["{{base_url}}"],
@@ -104,34 +151,61 @@
         },
         {
           "name": "Product Detail",
-          "request": { "method": "GET", "url": "{{base_url}}/produk/1" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/produk/1"
+          },
           "response": []
         },
         {
           "name": "List Categories",
-          "request": { "method": "GET", "url": "{{base_url}}/kategori" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/kategori"
+          },
           "response": []
         },
         {
           "name": "List Banners",
-          "request": { "method": "GET", "url": "{{base_url}}/banner" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/banner"
+          },
           "response": []
         },
         {
           "name": "List Marts",
-          "request": { "method": "GET", "url": "{{base_url}}/mart" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/mart"
+          },
           "response": []
         },
         {
           "name": "List Delivery Locations",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/lokasi?mart_id=1",
-              "host": ["{{base_url}}"],
-              "path": ["lokasi"],
-              "query": [{ "key": "mart_id", "value": "1" }]
-            }
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/lokasi?mart_id=1", "host": ["{{base_url}}"], "path": ["lokasi"], "query": [{ "key": "mart_id", "value": "1" }] }
           },
           "response": []
         }
@@ -142,18 +216,25 @@
       "item": [
         {
           "name": "Get Cart",
-          "request": { "method": "GET", "url": "{{base_url}}/cart" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/cart"
+          },
           "response": []
         },
         {
           "name": "Add to Cart",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"produk_id\": 1,\n  \"quantity\": 2\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"produk_id\": 1,\n  \"quantity\": 2\n}" },
             "url": "{{base_url}}/cart"
           },
           "response": []
@@ -162,18 +243,25 @@
           "name": "Update Cart Item",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quantity\": 3\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 3\n}" },
             "url": "{{base_url}}/cart/1"
           },
           "response": []
         },
         {
           "name": "Remove Cart Item",
-          "request": { "method": "DELETE", "url": "{{base_url}}/cart/1" },
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/cart/1"
+          },
           "response": []
         }
       ]
@@ -185,31 +273,48 @@
           "name": "List My Orders",
           "request": {
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/riwayat-pembelian?status=",
-              "host": ["{{base_url}}"],
-              "path": ["riwayat-pembelian"],
-              "query": [{ "key": "status", "value": "" }]
-            }
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/riwayat-pembelian?status=", "host": ["{{base_url}}"], "path": ["riwayat-pembelian"], "query": [{ "key": "status", "value": "" }] }
           },
           "response": []
         },
         {
-          "name": "Checkout (Create Order)",
+          "name": "Checkout",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tipe_layanan\": \"delivery\",\n  \"metode_pembayaran\": \"COD\",\n  \"alamat_pengantaran\": \"Asrama TJ Blok A Kamar 101\",\n  \"items\": [\n    { \"produk_id\": 1, \"quantity\": 2 }\n  ]\n}"
             },
             "url": "{{base_url}}/riwayat-pembelian"
           },
-          "response": []
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": { \"order_id\": \"TM-ABC123\", \"status\": \"pending\", \"total\": 25000 },\n  \"message\": \"Pesanan berhasil dibuat\"\n}"
+            }
+          ]
         },
         {
           "name": "Order Detail",
-          "request": { "method": "GET", "url": "{{base_url}}/riwayat-pembelian/1" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/riwayat-pembelian/1"
+          },
           "response": []
         }
       ]
@@ -218,15 +323,25 @@
       "name": "Galon",
       "item": [
         {
-          "name": "List My Galon Orders",
-          "request": { "method": "GET", "url": "{{base_url}}/galon" },
+          "name": "List Galon Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/galon"
+          },
           "response": []
         },
         {
           "name": "Create Galon Order",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nama_galon\": \"Galon 19L (Isi Ulang)\",\n  \"jumlah\": 2,\n  \"metode_pembayaran\": \"COD\",\n  \"metode_pengiriman\": \"antar\",\n  \"catatan\": \"Antar ke kamar A-101\"\n}"
@@ -241,22 +356,37 @@
       "name": "Token",
       "item": [
         {
-          "name": "List My Token Purchases",
-          "request": { "method": "GET", "url": "{{base_url}}/token" },
+          "name": "List Token Purchases",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/token"
+          },
           "response": []
         },
         {
           "name": "Purchase Token",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nominal\": 50000,\n  \"metode_pembayaran\": \"COD\"\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nominal\": 50000,\n  \"metode_pembayaran\": \"COD\"\n}" },
             "url": "{{base_url}}/token"
           },
-          "response": []
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": { \"nominal\": 50000, \"nomor_token\": \"01234567890123456789\", \"status\": \"completed\" },\n  \"message\": \"Token listrik berhasil dibuat\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -267,11 +397,11 @@
           "name": "Check In / Check Out",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"koordinat_absen\": \"-6.200000,106.816666\"\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"koordinat_absen\": \"-6.200000,106.816666\"\n}" },
             "url": "{{base_url}}/absensi"
           },
           "response": []
@@ -283,17 +413,38 @@
       "item": [
         {
           "name": "List Notifications",
-          "request": { "method": "GET", "url": "{{base_url}}/notifikasi" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/notifikasi"
+          },
           "response": []
         },
         {
           "name": "Mark as Read",
-          "request": { "method": "PUT", "url": "{{base_url}}/notifikasi/1/read" },
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/notifikasi/1/read"
+          },
           "response": []
         },
         {
           "name": "Mark All Read",
-          "request": { "method": "PUT", "url": "{{base_url}}/notifikasi/read-all" },
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/notifikasi/read-all"
+          },
           "response": []
         }
       ]
@@ -303,41 +454,45 @@
       "item": [
         {
           "name": "Admin Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.data && json.data.access_token) {",
-                  "  pm.collectionVariables.set('token', json.data.access_token);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data && json.data.access_token) {",
+                "  pm.collectionVariables.set('token', json.data.access_token);",
+                "  pm.environment.set('token', json.data.access_token);",
+                "}"
+              ],
+              "type": "text/javascript"
             }
-          ],
+          }],
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@tjmart.com\",\n  \"password\": \"password\"\n}"
-            },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@tjmart.com\",\n  \"password\": \"password\"\n}" },
             "url": "{{base_url}}/auth/login"
           },
           "response": []
         },
         {
           "name": "List All Products",
-          "request": { "method": "GET", "url": "{{base_url}}/admin/produk" },
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/admin/produk"
+          },
           "response": []
         },
         {
           "name": "Create Product",
           "request": {
             "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -356,6 +511,7 @@
           "name": "Update Product",
           "request": {
             "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -370,13 +526,24 @@
         },
         {
           "name": "Delete Product",
-          "request": { "method": "DELETE", "url": "{{base_url}}/admin/produk/1" },
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/admin/produk/1"
+          },
           "response": []
         },
         {
           "name": "List All Orders",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/riwayat-pembelian?status=&mart_id=&date_from=&date_to=",
               "host": ["{{base_url}}"],
@@ -395,11 +562,11 @@
           "name": "Update Order Status",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"processing\"\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"processing\"\n}" },
             "url": "{{base_url}}/admin/riwayat-pembelian/1/status"
           },
           "response": []
@@ -408,11 +575,11 @@
           "name": "Update Order Status (Delivering)",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"delivering\",\n  \"kurir_id\": 3\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"delivering\",\n  \"kurir_id\": 3\n}" },
             "url": "{{base_url}}/admin/riwayat-pembelian/1/status"
           },
           "response": []
@@ -421,6 +588,10 @@
           "name": "List All Galon Orders",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
               "raw": "{{base_url}}/admin/galon?status=&metode_pengiriman=",
               "host": ["{{base_url}}"],
@@ -437,11 +608,11 @@
           "name": "Update Galon Status",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"delivering\"\n}"
-            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"delivering\"\n}" },
             "url": "{{base_url}}/admin/galon/1/status"
           },
           "response": []
@@ -450,8 +621,12 @@
           "name": "List Attendance",
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "url": {
-              "raw": "{{base_url}}/admin/absensi?user_id=&tanggal=&status=",
+              "raw": "{{base_url}}/admin/absensi?user_id=&tanggal=2026-05-30&status=",
               "host": ["{{base_url}}"],
               "path": ["admin", "absensi"],
               "query": [

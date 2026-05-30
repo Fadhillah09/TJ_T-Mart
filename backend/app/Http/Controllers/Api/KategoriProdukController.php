@@ -8,6 +8,17 @@ use Illuminate\Http\JsonResponse;
 
 class KategoriProdukController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/kategori",
+     *     tags={"Public"},
+     *     summary="List product categories",
+     *     description="Includes produk_count for active products only.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(response=200, description="Category list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
+     * )
+     */
     public function index(): JsonResponse
     {
         $kategori = KategoriProduk::query()

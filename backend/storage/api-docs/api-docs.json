@@ -1,28 +1,121 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "TJ-T-Mart Backend API",
-        "description": "REST API for TJ-T-Mart — campus dormitory mini-mart system. Supports product catalog, cart, checkout, galon water delivery, electricity token purchase, attendance, and admin operations.",
-        "contact": {
-            "email": "support@tjmart.com"
-        },
+        "title": "TJ-T-Mart API",
+        "description": "REST API for TJ-T-Mart — Dormitory Mini-Mart System",
         "version": "1.0.0"
     },
     "servers": [
         {
             "url": "http://localhost:8000/api",
-            "description": "Local development server"
+            "description": "API Server"
         }
     ],
     "paths": {
+        "/absensi": {
+            "post": {
+                "tags": [
+                    "Absensi"
+                ],
+                "summary": "Check in or check out attendance",
+                "description": "Staff only (admin, superadmin, kurir). First call = check-in, second = check-out. Returns 409 if already complete.",
+                "operationId": "9ccff89763df80dc3a0eacd1b2e06d65",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AbsensiRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Check-in recorded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Attendance already complete for today"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/absensi": {
+            "get": {
+                "tags": [
+                    "Admin",
+                    "Absensi"
+                ],
+                "summary": "Admin: list attendance records",
+                "operationId": "7e0973d486f151672a4d1ea5023fd66e",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "tanggal",
+                        "in": "query",
+                        "description": "Y-m-d format",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "tepat_waktu",
+                                "terlambat",
+                                "mangkir"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated attendance list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/auth/register": {
             "post": {
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Register a new customer account",
-                "description": "OpenAPI path definitions for TJ-T-Mart API endpoints.\nControllers implement the logic; this class documents the HTTP contract.",
-                "operationId": "authRegister",
+                "operationId": "08136088c4862c313b35d6518bab8d3a",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -63,7 +156,7 @@
                     "Auth"
                 ],
                 "summary": "Login and obtain Bearer token",
-                "operationId": "authLogin",
+                "operationId": "99d66635c4992aeaa6aa44ff653d0563",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -76,13 +169,43 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Login successful"
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login berhasil"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "1|abc123token"
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Invalid credentials"
                     },
                     "429": {
-                        "description": "Account locked"
+                        "description": "Account locked after failed attempts"
                     }
                 }
             }
@@ -92,16 +215,23 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Revoke current token",
-                "operationId": "authLogout",
+                "summary": "Revoke current access token",
+                "operationId": "6abf3b64a4bc7838d56346f05a5153af",
                 "responses": {
                     "200": {
-                        "description": "Logout successful"
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -111,16 +241,23 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Revoke all tokens",
-                "operationId": "authLogoutAll",
+                "summary": "Revoke all access tokens for the user",
+                "operationId": "8a0e47e08fb7ff4a767e76fd65943833",
                 "responses": {
                     "200": {
-                        "description": "All sessions terminated"
+                        "description": "All sessions terminated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -130,11 +267,18 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Get authenticated profile",
-                "operationId": "authMe",
+                "summary": "Get authenticated user profile",
+                "operationId": "7edae2cdbaafc10dff8c9c4198b320a2",
                 "responses": {
                     "200": {
-                        "description": "Profile retrieved"
+                        "description": "Profile retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     },
                     "403": {
                         "description": "Email not verified"
@@ -142,83 +286,66 @@
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
         },
-        "/produk": {
-            "get": {
+        "/auth/email/resend": {
+            "post": {
                 "tags": [
-                    "Produk",
-                    "Public"
+                    "Auth"
                 ],
-                "summary": "List active products",
-                "operationId": "produkIndex",
-                "parameters": [
-                    {
-                        "name": "kategori_id",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "mart_id",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Resend email verification link",
+                "operationId": "1f2360e6a87658e6e47f996d5cb67e18",
                 "responses": {
                     "200": {
-                        "description": "Paginated product list"
+                        "description": "Verification email sent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Email already verified"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
         },
-        "/produk/{id}": {
+        "/banner": {
             "get": {
                 "tags": [
-                    "Produk",
                     "Public"
                 ],
-                "summary": "Product detail",
-                "operationId": "produkShow",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "List active banners",
+                "description": "Returns banners ordered by sort_order ascending.",
+                "operationId": "6cdc630585352e4c43f7144d040660a7",
                 "responses": {
                     "200": {
-                        "description": "Product detail"
-                    },
-                    "404": {
-                        "description": "Not found"
+                        "description": "Banner list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -228,16 +355,23 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Get cart",
-                "operationId": "cartIndex",
+                "summary": "Get current user's cart",
+                "operationId": "a290eb330c4b625ab436b6e37cd1beda",
                 "responses": {
                     "200": {
-                        "description": "Cart with total_harga"
+                        "description": "Cart with items and total_harga",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             },
@@ -245,8 +379,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Add to cart",
-                "operationId": "cartStore",
+                "summary": "Add product to cart",
+                "operationId": "b8e2209c6d9b86c119511ccd4efb0332",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -259,7 +393,14 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Item added"
+                        "description": "Item added",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "description": "Insufficient stock"
@@ -267,7 +408,7 @@
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -278,7 +419,7 @@
                     "Cart"
                 ],
                 "summary": "Update cart item quantity",
-                "operationId": "cartUpdate",
+                "operationId": "abf6b6565c38e40348017bbd8cc823ed",
                 "parameters": [
                     {
                         "name": "id",
@@ -294,25 +435,35 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "properties": {
-                                    "quantity": {
-                                        "type": "integer",
-                                        "minimum": 1
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/UpdateCartItemRequest"
                             }
                         }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "Cart updated"
+                        "description": "Cart updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Cart item not found"
+                    },
+                    "422": {
+                        "description": "Insufficient stock"
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             },
@@ -320,8 +471,8 @@
                 "tags": [
                     "Cart"
                 ],
-                "summary": "Remove cart item",
-                "operationId": "cartDestroy",
+                "summary": "Remove item from cart",
+                "operationId": "58ab10008fcbd7f18c621b7d7291411b",
                 "parameters": [
                     {
                         "name": "id",
@@ -334,103 +485,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Item removed"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/riwayat-pembelian": {
-            "get": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "List user orders",
-                "operationId": "ordersIndex",
-                "parameters": [
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Paginated orders"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "Checkout — create order",
-                "description": "Server-side pricing, stock deduction, cart clear in DB transaction.",
-                "operationId": "ordersStore",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CheckoutRequest"
+                        "description": "Item removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
                             }
                         }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Order created"
                     },
-                    "422": {
-                        "description": "Stock insufficient"
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "404": {
+                        "description": "Cart item not found"
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/riwayat-pembelian/{id}": {
-            "get": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "Order detail",
-                "operationId": "ordersShow",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Order detail"
-                    },
-                    "403": {
-                        "description": "Forbidden"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -440,16 +513,23 @@
                 "tags": [
                     "Galon"
                 ],
-                "summary": "List galon transactions",
-                "operationId": "galonIndex",
+                "summary": "List user's galon transactions",
+                "operationId": "1769e85c14430002f39efc062fb24098",
                 "responses": {
                     "200": {
-                        "description": "Galon history"
+                        "description": "Paginated galon history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             },
@@ -457,8 +537,9 @@
                 "tags": [
                     "Galon"
                 ],
-                "summary": "Create galon order",
-                "operationId": "galonStore",
+                "summary": "Create galon water order",
+                "description": "Prices calculated server-side. Galon Baru + Isi = 45000, Isi Ulang = 18000. Delivery fee 3000/gallon for 'antar'.",
+                "operationId": "94cb51d4ade93cc89d28f56a199e57a1",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -471,121 +552,232 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Galon order created"
+                        "description": "Galon order created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
         },
-        "/token": {
+        "/admin/galon": {
             "get": {
                 "tags": [
-                    "Token"
+                    "Admin",
+                    "Galon"
                 ],
-                "summary": "List token purchases",
-                "operationId": "tokenIndex",
-                "responses": {
-                    "200": {
-                        "description": "Token history"
-                    }
-                },
-                "security": [
+                "summary": "Admin: list all galon transactions",
+                "operationId": "3fe943092eed3e45fb4a59da55737683",
+                "parameters": [
                     {
-                        "sanctum": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Token"
-                ],
-                "summary": "Purchase electricity token",
-                "operationId": "tokenStore",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/TokenRequest"
-                            }
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
                         }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Token generated instantly"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/absensi": {
-            "post": {
-                "tags": [
-                    "Absensi"
-                ],
-                "summary": "Check in / check out",
-                "operationId": "absensiStore",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AbsensiRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Check-in recorded"
                     },
-                    "409": {
-                        "description": "Already complete today"
-                    }
-                },
-                "security": [
                     {
-                        "sanctum": []
+                        "name": "metode_pengiriman",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ambil",
+                                "antar"
+                            ]
+                        }
                     }
-                ]
-            }
-        },
-        "/notifikasi": {
-            "get": {
-                "tags": [
-                    "Notifikasi"
                 ],
-                "summary": "List notifications",
-                "description": "Includes unread_count in meta.",
-                "operationId": "notifikasiIndex",
                 "responses": {
                     "200": {
-                        "description": "Notification list"
+                        "description": "Admin galon list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
         },
-        "/notifikasi/{id}/read": {
+        "/admin/galon/{id}/status": {
             "put": {
                 "tags": [
-                    "Notifikasi"
+                    "Admin",
+                    "Galon"
                 ],
-                "summary": "Mark notification read",
-                "operationId": "notifikasiMarkRead",
+                "summary": "Admin: update galon order status",
+                "operationId": "a110505cbbaaad25522f0cba95f44042",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "paid",
+                                            "delivering",
+                                            "completed",
+                                            "cancelled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/kategori": {
+            "get": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "List product categories",
+                "description": "Includes produk_count for active products only.",
+                "operationId": "82330b9467c3aeca111d23f8a0b029f9",
+                "responses": {
+                    "200": {
+                        "description": "Category list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/lokasi": {
+            "get": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "List delivery locations",
+                "operationId": "56393b59428e201259cd707a20609b33",
+                "parameters": [
+                    {
+                        "name": "mart_id",
+                        "in": "query",
+                        "description": "Filter by mart",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Location list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/mart": {
+            "get": {
+                "tags": [
+                    "Mart"
+                ],
+                "summary": "List active marts",
+                "description": "Returns all active marts with lokasi_delivery and produk counts.",
+                "operationId": "75e35731ea6a9956e6d08467bcb1a765",
+                "responses": {
+                    "200": {
+                        "description": "Mart list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/mart/{id}": {
+            "get": {
+                "tags": [
+                    "Mart"
+                ],
+                "summary": "Get mart detail",
+                "operationId": "b54eaf60395507886a6ce9c194509531",
                 "parameters": [
                     {
                         "name": "id",
@@ -598,15 +790,89 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Marked read"
+                        "description": "Mart detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Not found"
+                        "description": "Mart not found"
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/notifikasi": {
+            "get": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "List user notifications",
+                "description": "Includes unread_count in meta. Paginated 20/page.",
+                "operationId": "783b107f8f9b93855a7c86fc1f5f6d99",
+                "responses": {
+                    "200": {
+                        "description": "Notification list with meta.unread_count",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/notifikasi/{id}/read": {
+            "put": {
+                "tags": [
+                    "Notifikasi"
+                ],
+                "summary": "Mark notification as read",
+                "description": "IDOR-protected: only the notification owner can mark it read.",
+                "operationId": "b3e37bfe6bd852a80ef3e858f73f5941",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Notification not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -616,16 +882,122 @@
                 "tags": [
                     "Notifikasi"
                 ],
-                "summary": "Mark all notifications read",
-                "operationId": "notifikasiMarkAllRead",
+                "summary": "Mark all notifications as read",
+                "operationId": "2763de394c365cd61b724a41418dd214",
                 "responses": {
                     "200": {
-                        "description": "All marked read"
+                        "description": "All marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/produk": {
+            "get": {
+                "tags": [
+                    "Produk",
+                    "Public"
+                ],
+                "summary": "List active products with filters",
+                "operationId": "070cf252f1e63a530eca818b332a72cb",
+                "parameters": [
+                    {
+                        "name": "kategori_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by product name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "mart_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated product list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/produk/{id}": {
+            "get": {
+                "tags": [
+                    "Produk",
+                    "Public"
+                ],
+                "summary": "Get product detail",
+                "operationId": "5b0b36f23f31f36678f65352bbab36a3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -636,16 +1008,23 @@
                     "Admin",
                     "Produk"
                 ],
-                "summary": "Admin: list products",
-                "operationId": "adminProdukIndex",
+                "summary": "Admin: list all products",
+                "operationId": "92867e9cbafc2cd3a89dec6f063eea40",
                 "responses": {
                     "200": {
-                        "description": "Admin product list"
+                        "description": "Admin product list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             },
@@ -655,15 +1034,312 @@
                     "Produk"
                 ],
                 "summary": "Admin: create product",
-                "operationId": "adminProdukStore",
+                "operationId": "85266bd5bdb78981d8ba93c41d53adef",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "nama_produk",
+                                    "kategori_id",
+                                    "harga",
+                                    "stok"
+                                ],
+                                "properties": {
+                                    "nama_produk": {
+                                        "type": "string"
+                                    },
+                                    "kategori_id": {
+                                        "type": "integer"
+                                    },
+                                    "harga": {
+                                        "type": "number"
+                                    },
+                                    "stok": {
+                                        "type": "integer"
+                                    },
+                                    "deskripsi": {
+                                        "type": "string"
+                                    },
+                                    "gambar": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
-                        "description": "Product created"
+                        "description": "Product created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/produk/{id}": {
+            "put": {
+                "tags": [
+                    "Admin",
+                    "Produk"
+                ],
+                "summary": "Admin: update product",
+                "operationId": "01d690be2ce690078194c323c9e41382",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "nama_produk": {
+                                        "type": "string"
+                                    },
+                                    "kategori_id": {
+                                        "type": "integer"
+                                    },
+                                    "harga": {
+                                        "type": "number"
+                                    },
+                                    "stok": {
+                                        "type": "integer"
+                                    },
+                                    "deskripsi": {
+                                        "type": "string"
+                                    },
+                                    "gambar": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Product not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin",
+                    "Produk"
+                ],
+                "summary": "Admin: soft delete product",
+                "operationId": "3ed56711968540e6bd6862c1e1ec5fe5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Product not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/riwayat-pembelian": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "List authenticated user's orders",
+                "operationId": "2e49ce95ad5f35ff7bbfd9f2fecb8c50",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "processing",
+                                "delivering",
+                                "completed",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated order history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Create order (checkout)",
+                "description": "Server-side price calculation, stock deduction, cart clearing, and notification in a DB transaction.",
+                "operationId": "1ae4efc925b7866f4a2bb80bf5fb6709",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CheckoutRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Order created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Insufficient stock or invalid items"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/riwayat-pembelian/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get order detail",
+                "operationId": "17559c01d7fe3daa64243fc6624960f6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order detail",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -674,8 +1350,8 @@
                     "Admin",
                     "Orders"
                 ],
-                "summary": "Admin: list all orders",
-                "operationId": "adminOrdersIndex",
+                "summary": "Admin: list all orders with filters",
+                "operationId": "b468762b9c39ff0b12b8208d14bae828",
                 "parameters": [
                     {
                         "name": "status",
@@ -710,12 +1386,19 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Admin orders"
+                        "description": "Paginated admin orders",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -727,7 +1410,7 @@
                     "Orders"
                 ],
                 "summary": "Admin: update order status",
-                "operationId": "adminOrdersUpdateStatus",
+                "operationId": "42835a420c59a4311624e25e6b35852a",
                 "parameters": [
                     {
                         "name": "id",
@@ -750,133 +1433,80 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Status updated"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/admin/galon": {
-            "get": {
-                "tags": [
-                    "Admin",
-                    "Galon"
-                ],
-                "summary": "Admin: list galon orders",
-                "operationId": "adminGalonIndex",
-                "responses": {
-                    "200": {
-                        "description": "Admin galon list"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/admin/galon/{id}/status": {
-            "put": {
-                "tags": [
-                    "Admin",
-                    "Galon"
-                ],
-                "summary": "Admin: update galon status",
-                "operationId": "adminGalonUpdateStatus",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                        "description": "Status updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
                         }
                     }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/token": {
+            "get": {
+                "tags": [
+                    "Token"
                 ],
+                "summary": "List user's token transactions",
+                "operationId": "470e4f3a045ba1884a96a0754f403e22",
+                "responses": {
+                    "200": {
+                        "description": "Paginated token history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Token"
+                ],
+                "summary": "Purchase electricity token",
+                "description": "Generates a 20-digit token instantly. Status set to completed.",
+                "operationId": "fd9d84f0cd1f43d7f185f1eea43e330d",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "properties": {
-                                    "status": {
-                                        "type": "string",
-                                        "enum": [
-                                            "pending",
-                                            "paid",
-                                            "delivering",
-                                            "completed",
-                                            "cancelled"
-                                        ]
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/TokenRequest"
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Status updated"
+                    "201": {
+                        "description": "Token purchased",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
                     {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/admin/absensi": {
-            "get": {
-                "tags": [
-                    "Admin",
-                    "Absensi"
-                ],
-                "summary": "Admin: list attendance",
-                "operationId": "adminAbsensiIndex",
-                "parameters": [
-                    {
-                        "name": "user_id",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "tanggal",
-                        "in": "query",
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "tepat_waktu",
-                                "terlambat",
-                                "mangkir"
-                            ]
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Attendance list"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -990,6 +1620,19 @@
                     "quantity": {
                         "type": "integer",
                         "example": 2,
+                        "minimum": 1
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateCartItemRequest": {
+                "required": [
+                    "quantity"
+                ],
+                "properties": {
+                    "quantity": {
+                        "type": "integer",
+                        "example": 3,
                         "minimum": 1
                     }
                 },
@@ -1154,57 +1797,79 @@
                     }
                 },
                 "type": "object"
+            },
+            "UpdateGalonStatusRequest": {
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "delivering",
+                        "enum": [
+                            "pending",
+                            "paid",
+                            "delivering",
+                            "completed",
+                            "cancelled"
+                        ]
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
-            "sanctum": {
+            "bearerAuth": {
                 "type": "http",
-                "description": "Laravel Sanctum Bearer token. Obtain via POST /auth/login",
-                "bearerFormat": "Sanctum",
+                "bearerFormat": "JWT",
                 "scheme": "bearer"
             }
         }
     },
     "tags": [
         {
-            "name": "Auth",
-            "description": "Authentication and user session"
-        },
-        {
-            "name": "Produk",
-            "description": "Product catalog"
-        },
-        {
-            "name": "Cart",
-            "description": "Shopping cart"
-        },
-        {
-            "name": "Orders",
-            "description": "Order history and checkout"
-        },
-        {
-            "name": "Galon",
-            "description": "Gallon water transactions"
-        },
-        {
-            "name": "Token",
-            "description": "Electricity token purchase"
-        },
-        {
             "name": "Absensi",
-            "description": "Staff attendance"
-        },
-        {
-            "name": "Notifikasi",
-            "description": "User notifications"
+            "description": "Absensi"
         },
         {
             "name": "Admin",
-            "description": "Admin-only endpoints"
+            "description": "Admin"
+        },
+        {
+            "name": "Auth",
+            "description": "Auth"
         },
         {
             "name": "Public",
-            "description": "Public catalog endpoints"
+            "description": "Public"
+        },
+        {
+            "name": "Cart",
+            "description": "Cart"
+        },
+        {
+            "name": "Galon",
+            "description": "Galon"
+        },
+        {
+            "name": "Mart",
+            "description": "Mart"
+        },
+        {
+            "name": "Notifikasi",
+            "description": "Notifikasi"
+        },
+        {
+            "name": "Produk",
+            "description": "Produk"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
+        },
+        {
+            "name": "Token",
+            "description": "Token"
         }
     ]
 }

@@ -4,30 +4,6 @@ namespace App\OpenApi;
 
 use OpenApi\Attributes as OA;
 
-#[OA\Info(
-    version: '1.0.0',
-    title: 'TJ-T-Mart Backend API',
-    description: 'REST API for TJ-T-Mart — campus dormitory mini-mart system. Supports product catalog, cart, checkout, galon water delivery, electricity token purchase, attendance, and admin operations.',
-    contact: new OA\Contact(email: 'support@tjmart.com')
-)]
-#[OA\Server(url: 'http://localhost:8000/api', description: 'Local development server')]
-#[OA\SecurityScheme(
-    securityScheme: 'sanctum',
-    type: 'http',
-    scheme: 'bearer',
-    bearerFormat: 'Sanctum',
-    description: 'Laravel Sanctum Bearer token. Obtain via POST /auth/login'
-)]
-#[OA\Tag(name: 'Auth', description: 'Authentication and user session')]
-#[OA\Tag(name: 'Produk', description: 'Product catalog')]
-#[OA\Tag(name: 'Cart', description: 'Shopping cart')]
-#[OA\Tag(name: 'Orders', description: 'Order history and checkout')]
-#[OA\Tag(name: 'Galon', description: 'Gallon water transactions')]
-#[OA\Tag(name: 'Token', description: 'Electricity token purchase')]
-#[OA\Tag(name: 'Absensi', description: 'Staff attendance')]
-#[OA\Tag(name: 'Notifikasi', description: 'User notifications')]
-#[OA\Tag(name: 'Admin', description: 'Admin-only endpoints')]
-#[OA\Tag(name: 'Public', description: 'Public catalog endpoints')]
 #[OA\Schema(
     schema: 'ApiSuccessResponse',
     properties: [
@@ -71,6 +47,13 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'produk_id', type: 'integer', example: 1),
         new OA\Property(property: 'quantity', type: 'integer', minimum: 1, example: 2),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UpdateCartItemRequest',
+    required: ['quantity'],
+    properties: [
+        new OA\Property(property: 'quantity', type: 'integer', minimum: 1, example: 3),
     ]
 )]
 #[OA\Schema(
@@ -125,6 +108,13 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'status', type: 'string', enum: ['pending', 'processing', 'delivering', 'completed', 'cancelled'], example: 'processing'),
         new OA\Property(property: 'kurir_id', type: 'integer', example: 3, description: 'Required when status=delivering'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UpdateGalonStatusRequest',
+    required: ['status'],
+    properties: [
+        new OA\Property(property: 'status', type: 'string', enum: ['pending', 'paid', 'delivering', 'completed', 'cancelled'], example: 'delivering'),
     ]
 )]
 class OpenApiSpec

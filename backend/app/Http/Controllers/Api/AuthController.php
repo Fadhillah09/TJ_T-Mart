@@ -133,7 +133,7 @@ class AuthController extends Controller
      *     path="/auth/logout",
      *     tags={"Auth"},
      *     summary="Revoke current access token",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Logout successful", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -152,7 +152,7 @@ class AuthController extends Controller
      *     path="/auth/logout-all",
      *     tags={"Auth"},
      *     summary="Revoke all access tokens for the user",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="All sessions terminated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -171,7 +171,7 @@ class AuthController extends Controller
      *     path="/auth/me",
      *     tags={"Auth"},
      *     summary="Get authenticated user profile",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Profile retrieved", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
      *     @OA\Response(response=403, description="Email not verified")
@@ -184,6 +184,18 @@ class AuthController extends Controller
         return $this->success(['user' => UserResource::make($user)], 'Profil berhasil diambil');
     }
 
+    /**
+     * @OA\Post(
+     *     path="/auth/email/resend",
+     *     tags={"Auth"},
+     *     summary="Resend email verification link",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(response=200, description="Verification email sent", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=400, description="Email already verified"),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
+     */
     public function resendVerification(Request $request): JsonResponse
     {
         if ($request->user()->hasVerifiedEmail()) {

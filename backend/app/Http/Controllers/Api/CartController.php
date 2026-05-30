@@ -21,7 +21,7 @@ class CartController extends Controller
      *     path="/cart",
      *     tags={"Cart"},
      *     summary="Get current user's cart",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Cart with items and total_harga", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -39,7 +39,7 @@ class CartController extends Controller
      *     path="/cart",
      *     tags={"Cart"},
      *     summary="Add product to cart",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/CartItemRequest")),
      *
@@ -91,6 +91,23 @@ class CartController extends Controller
         return $this->success(CartResource::make($cart), 'Produk ditambahkan ke keranjang', 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/cart/{id}",
+     *     tags={"Cart"},
+     *     summary="Update cart item quantity",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/UpdateCartItemRequest")),
+     *
+     *     @OA\Response(response=200, description="Cart updated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=404, description="Cart item not found"),
+     *     @OA\Response(response=422, description="Insufficient stock")
+     * )
+     */
     public function update(UpdateCartItemRequest $request, string $id): JsonResponse
     {
         $validated = $request->validated();
@@ -117,6 +134,20 @@ class CartController extends Controller
         return $this->success(CartResource::make($cart), 'Keranjang berhasil diperbarui');
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/cart/{id}",
+     *     tags={"Cart"},
+     *     summary="Remove item from cart",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Item removed", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=404, description="Cart item not found")
+     * )
+     */
     public function destroy(Request $request, string $id): JsonResponse
     {
         $cart = $this->getOrCreateCart($request->user()->id);

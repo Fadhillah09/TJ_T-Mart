@@ -19,7 +19,7 @@ class TokenTransactionController extends Controller
      *     path="/token",
      *     tags={"Token"},
      *     summary="List user's token transactions",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Paginated token history", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -43,7 +43,7 @@ class TokenTransactionController extends Controller
      *     tags={"Token"},
      *     summary="Purchase electricity token",
      *     description="Generates a 20-digit token instantly. Status set to completed.",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/TokenRequest")),
      *

@@ -27,7 +27,7 @@ class ProdukController extends Controller
      *     path="/produk",
      *     tags={"Produk","Public"},
      *     summary="List active products with filters",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="kategori_id", in="query", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="search", in="query", description="Search by product name", @OA\Schema(type="string")),
@@ -74,7 +74,7 @@ class ProdukController extends Controller
      *     path="/produk/{id}",
      *     tags={"Produk","Public"},
      *     summary="Get product detail",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
@@ -112,7 +112,7 @@ class ProdukController extends Controller
      *     path="/admin/produk",
      *     tags={"Admin","Produk"},
      *     summary="Admin: list all products",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Admin product list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -139,7 +139,7 @@ class ProdukController extends Controller
      *     path="/admin/produk",
      *     tags={"Admin","Produk"},
      *     summary="Admin: create product",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(
      *         required=true,
@@ -207,6 +207,40 @@ class ProdukController extends Controller
         return $this->success(ProdukResource::make($produk), 'Produk berhasil ditambahkan', 201);
     }
 
+    /**
+     * @OA\Put(
+     *     path="/admin/produk/{id}",
+     *     tags={"Admin","Produk"},
+     *     summary="Admin: update product",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *
+     *             @OA\Schema(
+     *
+     *                 @OA\Property(property="nama_produk", type="string"),
+     *                 @OA\Property(property="kategori_id", type="integer"),
+     *                 @OA\Property(property="harga", type="number"),
+     *                 @OA\Property(property="stok", type="integer"),
+     *                 @OA\Property(property="deskripsi", type="string"),
+     *                 @OA\Property(property="gambar", type="string", format="binary")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=200, description="Product updated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Product not found"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function update(UpdateProdukRequest $request, string $id): JsonResponse
     {
         $produk = Produk::find($id);
@@ -236,6 +270,21 @@ class ProdukController extends Controller
         );
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/admin/produk/{id}",
+     *     tags={"Admin","Produk"},
+     *     summary="Admin: soft delete product",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response=200, description="Product deleted", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
+     *     @OA\Response(response=401, description="Unauthenticated"),
+     *     @OA\Response(response=403, description="Forbidden"),
+     *     @OA\Response(response=404, description="Product not found")
+     * )
+     */
     public function destroy(Request $request, string $id): JsonResponse
     {
         $produk = Produk::find($id);

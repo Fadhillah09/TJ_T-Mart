@@ -27,7 +27,7 @@ class GalonTransactionController extends Controller
      *     path="/galon",
      *     tags={"Galon"},
      *     summary="List user's galon transactions",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Response(response=200, description="Paginated galon history", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
      * )
@@ -51,7 +51,7 @@ class GalonTransactionController extends Controller
      *     tags={"Galon"},
      *     summary="Create galon water order",
      *     description="Prices calculated server-side. Galon Baru + Isi = 45000, Isi Ulang = 18000. Delivery fee 3000/gallon for 'antar'.",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(required=true, @OA\JsonContent(ref="#/components/schemas/GalonRequest")),
      *
@@ -105,7 +105,7 @@ class GalonTransactionController extends Controller
      *     path="/admin/galon",
      *     tags={"Admin","Galon"},
      *     summary="Admin: list all galon transactions",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
      *     @OA\Parameter(name="metode_pengiriman", in="query", @OA\Schema(type="string", enum={"ambil","antar"})),
@@ -133,7 +133,7 @@ class GalonTransactionController extends Controller
      *     path="/admin/galon/{id}/status",
      *     tags={"Admin","Galon"},
      *     summary="Admin: update galon order status",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *
