@@ -3,26 +3,40 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Admin extends Model
 {
-    // Nama tabel sesuai di database kamu
-    protected $table = 'admins';
-
     protected $fillable = [
         'user_id',
         'mart_id',
-        'nama_custom',
-        'gaji',
         'jabatan',
+        'gaji',
         'nama_bank',
         'nomor_rekening',
-        'tanggal_gaji'
+        'tanggal_gaji',
     ];
 
-    // Relasi balik ke User
-    public function user()
+    protected function casts(): array
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return [
+            'gaji' => 'decimal:2',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function mart(): BelongsTo
+    {
+        return $this->belongsTo(Mart::class);
+    }
+
+    public function penjualans(): HasMany
+    {
+        return $this->hasMany(Penjualan::class);
     }
 }

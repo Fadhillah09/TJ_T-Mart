@@ -10,9 +10,11 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        if (!$request->user() || !in_array($request->user()->role->role_name, $roles)) {
+        $userRole = $request->user()?->role?->name;
+
+        if (! $userRole || ! in_array($userRole, $roles, true)) {
             return response()->json([
-                'message' => 'Akses ditolak. Anda tidak memiliki izin untuk mengakses fitur ini.'
+                'message' => 'Akses ditolak. Anda tidak memiliki izin untuk mengakses fitur ini.',
             ], 403);
         }
 

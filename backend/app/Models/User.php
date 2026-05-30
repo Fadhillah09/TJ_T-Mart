@@ -2,91 +2,111 @@
 
 namespace App\Models;
 
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, HasFactory;
-
-    protected $primaryKey = 'id';
-    public $incrementing = true;
-    protected $keyType = 'int';
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
+        'role_id',
         'name',
         'email',
         'password',
-        'role_id',
-        'no_telp',
+        'phone',
+        'foto',
+        'nomor_kamar',
         'penghuni_asrama',
-        'lokasi_id',      
-        'alamat_gedung',
-        'nomor_kamar',     
-        'gambar',
-        'remember_token',
-        'email_verified_at',
-        'mart_id', 
+        'active_mart_id',
+        'lokasi_id',
+        'status',
     ];
 
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
-
-    public function karyawanProfile()
+    protected function casts(): array
     {
-        return $this->hasOne(KaryawanProfile::class, 'user_id', 'id');
+        return [
+            'password' => 'hashed',
+            'penghuni_asrama' => 'boolean',
+        ];
     }
 
-    public function isKurir()
+    public function role(): BelongsTo
     {
-        return $this->role && $this->role->role_name === 'Kurir';
+        return $this->belongsTo(Role::class);
     }
 
-    public function isSuperAdmin()
+    public function activeMart(): BelongsTo
     {
-        return $this->role && $this->role->role_name === 'Super Admin';
+        return $this->belongsTo(Mart::class, 'active_mart_id');
     }
 
-    public function role()
+    public function lokasi(): BelongsTo
     {
-        return $this->belongsTo(Role::class, 'role_id', 'id');
+        return $this->belongsTo(LokasiDelivery::class, 'lokasi_id');
     }
 
-    public function lokasi()
+    public function admin(): HasOne
     {
-        return $this->belongsTo(LokasiDelivery::class, 'lokasi_id', 'id');
+        return $this->hasOne(Admin::class);
     }
 
-    public function getAlamatLengkapAttribute()
-    {
-        $gedung = $this->lokasi ? $this->lokasi->nama_lokasi : ($this->alamat_gedung ?? 'Gedung belum diset');
-        $kamar = $this->nomor_kamar ? "Kamar " . $this->nomor_kamar : 'Kamar belum diset';
-        
-        return "{$gedung} - {$kamar}";
-    }
-
-    public function transaksis()
-    {
-        return $this->hasMany(Transaksi::class);
-    }
-
-    public function cart()
+    public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
     }
 
-    public function wishlists()
+    public function wishlists(): HasMany
     {
         return $this->hasMany(Wishlist::class);
     }
 
-    public function mart()
+    public function riwayatPembelians(): HasMany
     {
-        return $this->belongsTo(Mart::class, 'mart_id');
+        return $this->hasMany(RiwayatPembelian::class);
+    }
+
+    public function pengantaranSebagaiKurir(): HasMany
+    {
+        return $this->hasMany(RiwayatPembelian::class, 'kurir_id');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function absensis(): HasMany
+    {
+        return $this->hasMany(Absensi::class);
+    }
+
+    public function metodePembayarans(): HasMany
+    {
+        return $this->hasMany(MetodePembayaran::class);
+    }
+
+    public function galonTransactions(): HasMany
+    {
+        return $this->hasMany(GalonTransaction::class);
+    }
+
+    public function tokenTransactions(): HasMany
+    {
+        return $this->hasMany(TokenTransaction::class);
+    }
+
+    public function produkReviews(): HasMany
+    {
+        return $this->hasMany(ProdukReview::class);
     }
 }
