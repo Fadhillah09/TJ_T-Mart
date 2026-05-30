@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Token\StoreTokenRequest;
+use App\Http\Resources\TokenTransactionResource;
 use App\Models\TokenTransaction;
+use App\Services\AuditService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TokenTransactionController extends Controller
 {
@@ -17,37 +21,45 @@ class TokenTransactionController extends Controller
             ->latest()
             ->paginate(10);
 
-        return $this->success($transactions, 'Riwayat token berhasil diambil');
+        return $this->success(
+            TokenTransactionResource::collection($transactions)->response()->getData(true),
+            'Riwayat token berhasil diambil'
+        );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTokenRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nominal' => ['required', 'in:20000,50000,100000,200000,500000'],
-            'metode_pembayaran' => ['required', 'in:COD,MIDTRANS'],
-        ]);
+        $validated = $request->validated();
 
-        do {
-            $nomorToken = collect(range(1, 20))
-                ->map(fn () => (string) random_int(0, 9))
-                ->join('');
-        } while (TokenTransaction::where('nomor_token', $nomorToken)->exists());
+        $transaction = DB::transaction(function () use ($request, $validated) {
+            do {
+                $nomorToken = str_pad((string) mt_rand(0, 999999999), 20, '0', STR_PAD_LEFT);
+            } while (TokenTransaction::where('nomor_token', $nomorToken)->exists());
 
-        $transaction = TokenTransaction::create([
-            'user_id' => $request->user()->id,
-            'nominal' => $validated['nominal'],
-            'nomor_token' => $nomorToken,
-            'status' => 'completed',
-            'metode_pembayaran' => $validated['metode_pembayaran'],
-        ]);
+            $token = TokenTransaction::create([
+                'user_id' => $request->user()->id,
+                'nominal' => $validated['nominal'],
+                'nomor_token' => $nomorToken,
+                'status' => 'completed',
+                'metode_pembayaran' => $validated['metode_pembayaran'],
+            ]);
 
-        NotificationService::send(
-            $request->user(),
-            'Token Listrik Berhasil ⚡',
-            "Token listrik Rp ".number_format($validated['nominal'], 0, ',', '.')." berhasil dibuat. Nomor token: {$nomorToken}",
-            'token'
+            NotificationService::send(
+                $request->user(),
+                'Token Listrik Berhasil ⚡',
+                'Token listrik Rp '.number_format((float) $validated['nominal'], 0, ',', '.')." berhasil dibuat. Nomor token: {$nomorToken}",
+                'token'
+            );
+
+            return $token;
+        });
+
+        AuditService::log('token_purchase', TokenTransaction::class, $transaction->id, $request);
+
+        return $this->success(
+            TokenTransactionResource::make($transaction),
+            'Token listrik berhasil dibuat',
+            201
         );
-
-        return $this->success($transaction, 'Token listrik berhasil dibuat', 201);
     }
 }

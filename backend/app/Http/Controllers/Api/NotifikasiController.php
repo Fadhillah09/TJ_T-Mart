@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\NotifikasiResource;
-use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,39 +11,41 @@ class NotifikasiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
 
-        $notifications = Notification::query()
-            ->where('user_id', $userId)
+        $notifications = $user->notifications()
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        $unreadCount = Notification::where('user_id', $userId)
+        $payload = NotifikasiResource::collection($notifications)->response()->getData(true);
+
+        $unreadCount = $user->notifications()
             ->where('is_read', false)
             ->count();
 
-        return $this->success([
-            'unread_count' => $unreadCount,
-            'notifications' => NotifikasiResource::collection($notifications)->response()->getData(true),
-        ], 'Notifikasi berhasil diambil');
+        return response()->json([
+            'success' => true,
+            'data' => $payload['data'],
+            'links' => $payload['links'] ?? null,
+            'meta' => array_merge($payload['meta'] ?? [], [
+                'unread_count' => $unreadCount,
+            ]),
+            'message' => 'Notifikasi berhasil diambil',
+        ]);
     }
 
     public function markAsRead(Request $request, string $id): JsonResponse
     {
-        $notification = Notification::where('user_id', $request->user()->id)->find($id);
-
-        if (! $notification) {
-            return $this->error('Notifikasi tidak ditemukan.', null, 404);
-        }
+        $notification = $request->user()->notifications()->findOrFail($id);
 
         $notification->update(['is_read' => true]);
 
-        return $this->success(NotifikasiResource::make($notification), 'Notifikasi ditandai sudah dibaca');
+        return $this->success(null, 'Notifikasi ditandai sudah dibaca');
     }
 
     public function markAllRead(Request $request): JsonResponse
     {
-        Notification::where('user_id', $request->user()->id)
+        $request->user()->notifications()
             ->where('is_read', false)
             ->update(['is_read' => true]);
 

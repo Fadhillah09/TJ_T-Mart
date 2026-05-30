@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Mart;
 use Illuminate\Http\JsonResponse;
+
 class MartController extends Controller
 {
     public function index(): JsonResponse
     {
         $marts = Mart::query()
             ->where('is_active', true)
-            ->where('status', 'aktif')
+            ->withCount(['lokasis as lokasi_delivery_count', 'produkMarts as produk_count'])
             ->orderBy('nama_mart')
             ->get();
 
@@ -21,7 +22,7 @@ class MartController extends Controller
     public function show(string $id): JsonResponse
     {
         $mart = Mart::with('lokasis')
-            ->withCount('produkMarts')
+            ->withCount(['lokasis as lokasi_delivery_count', 'produkMarts as produk_count'])
             ->where('is_active', true)
             ->find($id);
 

@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Cart\StoreCartItemRequest;
+use App\Http\Requests\Cart\UpdateCartItemRequest;
+use App\Http\Resources\CartResource;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Produk;
+use App\Models\ProdukMart;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,17 +19,15 @@ class CartController extends Controller
     public function index(Request $request): JsonResponse
     {
         $cart = $this->getOrCreateCart($request->user()->id);
-        $cart->load(['items.produk:id,nama_produk,harga,gambar']);
+        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
 
-        return $this->success($this->formatCart($cart), 'Keranjang berhasil diambil');
+        return $this->success(CartResource::make($cart), 'Keranjang berhasil diambil');
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCartItemRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'produk_id' => ['required', 'exists:produk,id'],
-            'quantity' => ['required', 'integer', 'min:1'],
-        ]);
+        $validated = $request->validated();
+        $user = $request->user();
 
         $produk = Produk::find($validated['produk_id']);
 
@@ -32,11 +35,13 @@ class CartController extends Controller
             return $this->error('Produk tidak tersedia.', null, 404);
         }
 
-        if ($produk->stok < $validated['quantity']) {
-            return $this->error('Stok produk tidak mencukupi.', ['stok' => $produk->stok], 422);
+        $availableStok = $this->availableStok($user, $produk);
+
+        if ($availableStok < $validated['quantity']) {
+            return $this->error('Stok produk tidak mencukupi.', ['stok' => $availableStok], 422);
         }
 
-        $cart = $this->getOrCreateCart($request->user()->id);
+        $cart = $this->getOrCreateCart($user->id);
 
         $item = CartItem::where('cart_id', $cart->id)
             ->where('produk_id', $validated['produk_id'])
@@ -46,8 +51,8 @@ class CartController extends Controller
 
         if ($item) {
             $newQty = $item->quantity + $validated['quantity'];
-            if ($produk->stok < $newQty) {
-                return $this->error('Stok produk tidak mencukupi.', ['stok' => $produk->stok], 422);
+            if ($availableStok < $newQty) {
+                return $this->error('Stok produk tidak mencukupi.', ['stok' => $availableStok], 422);
             }
             $item->update(['quantity' => $newQty]);
         } else {
@@ -58,18 +63,16 @@ class CartController extends Controller
             ]);
         }
 
-        $cart->load(['items.produk:id,nama_produk,harga,gambar']);
+        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
 
-        return $this->success($this->formatCart($cart), 'Produk ditambahkan ke keranjang', 201);
+        return $this->success(CartResource::make($cart), 'Produk ditambahkan ke keranjang', 201);
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateCartItemRequest $request, string $id): JsonResponse
     {
-        $validated = $request->validate([
-            'quantity' => ['required', 'integer', 'min:1'],
-        ]);
-
-        $cart = $this->getOrCreateCart($request->user()->id);
+        $validated = $request->validated();
+        $user = $request->user();
+        $cart = $this->getOrCreateCart($user->id);
 
         $item = CartItem::where('cart_id', $cart->id)->where('id', $id)->first();
 
@@ -78,16 +81,17 @@ class CartController extends Controller
         }
 
         $produk = Produk::find($item->produk_id);
+        $availableStok = $this->availableStok($user, $produk);
 
-        if ($produk->stok < $validated['quantity']) {
-            return $this->error('Stok produk tidak mencukupi.', ['stok' => $produk->stok], 422);
+        if ($availableStok < $validated['quantity']) {
+            return $this->error('Stok produk tidak mencukupi.', ['stok' => $availableStok], 422);
         }
 
         $item->update(['quantity' => $validated['quantity']]);
 
-        $cart->load(['items.produk:id,nama_produk,harga,gambar']);
+        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
 
-        return $this->success($this->formatCart($cart), 'Keranjang berhasil diperbarui');
+        return $this->success(CartResource::make($cart), 'Keranjang berhasil diperbarui');
     }
 
     public function destroy(Request $request, string $id): JsonResponse
@@ -102,9 +106,9 @@ class CartController extends Controller
 
         $item->delete();
 
-        $cart->load(['items.produk:id,nama_produk,harga,gambar']);
+        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
 
-        return $this->success($this->formatCart($cart), 'Item dihapus dari keranjang');
+        return $this->success(CartResource::make($cart), 'Item dihapus dari keranjang');
     }
 
     private function getOrCreateCart(int $userId): Cart
@@ -112,15 +116,18 @@ class CartController extends Controller
         return Cart::firstOrCreate(['user_id' => $userId]);
     }
 
-    private function formatCart(Cart $cart): array
+    private function availableStok(User $user, Produk $produk): int
     {
-        $totalHarga = $cart->items->sum(fn (CartItem $item) => $item->quantity * (float) $item->produk->harga);
+        if ($user->active_mart_id) {
+            $produkMart = ProdukMart::where('produk_id', $produk->id)
+                ->where('mart_id', $user->active_mart_id)
+                ->first();
 
-        return [
-            'id' => $cart->id,
-            'user_id' => $cart->user_id,
-            'items' => $cart->items,
-            'total_harga' => $totalHarga,
-        ];
+            if ($produkMart) {
+                return (int) $produkMart->stok_lokal;
+            }
+        }
+
+        return (int) $produk->stok;
     }
 }

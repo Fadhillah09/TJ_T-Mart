@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Galon\StoreGalonRequest;
+use App\Http\Requests\Galon\UpdateGalonStatusRequest;
 use App\Http\Resources\GalonTransactionResource;
-use App\Http\Resources\NotifikasiResource;
 use App\Models\GalonTransaction;
-use App\Models\Notification;
+use App\Services\AuditService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GalonTransactionController extends Controller
 {
     private const GALON_PRICES = [
-        'Galon Baru + Isi' => 75000,
+        'Galon Baru + Isi' => 45000,
         'Galon 19L (Isi Ulang)' => 18000,
     ];
 
@@ -33,42 +35,40 @@ class GalonTransactionController extends Controller
         );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreGalonRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nama_galon' => ['required', 'in:Galon Baru + Isi,Galon 19L (Isi Ulang)'],
-            'jumlah' => ['required', 'integer', 'min:1'],
-            'metode_pembayaran' => ['required', 'in:COD,MIDTRANS'],
-            'metode_pengiriman' => ['required', 'in:ambil,antar'],
-            'catatan' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $validated = $request->validated();
 
-        $hargaSatuan = self::GALON_PRICES[$validated['nama_galon']];
-        $ongkir = $validated['metode_pengiriman'] === 'antar'
-            ? self::ONGKIR_PER_GALON * $validated['jumlah']
-            : 0;
+        $transaction = DB::transaction(function () use ($request, $validated) {
+            $hargaSatuan = self::GALON_PRICES[$validated['nama_galon']];
+            $ongkir = $validated['metode_pengiriman'] === 'antar'
+                ? self::ONGKIR_PER_GALON * $validated['jumlah']
+                : 0;
 
-        $transaction = GalonTransaction::create([
-            'user_id' => $request->user()->id,
-            'nama_galon' => $validated['nama_galon'],
-            'harga_satuan' => $hargaSatuan,
-            'jumlah' => $validated['jumlah'],
-            'total_harga' => ($hargaSatuan * $validated['jumlah']) + $ongkir,
-            'ongkir' => $ongkir,
-            'order_id' => 'GL-'.strtoupper(uniqid()),
-            'catatan' => $validated['catatan'] ?? null,
-            'status' => 'pending',
-            'metode_pembayaran' => $validated['metode_pembayaran'],
-            'metode_pengiriman' => $validated['metode_pengiriman'],
-            'waktu_transaksi' => now(),
-        ]);
+            $galon = GalonTransaction::create([
+                'user_id' => $request->user()->id,
+                'nama_galon' => $validated['nama_galon'],
+                'harga_satuan' => $hargaSatuan,
+                'jumlah' => $validated['jumlah'],
+                'total_harga' => ($hargaSatuan * $validated['jumlah']) + $ongkir,
+                'ongkir' => $ongkir,
+                'order_id' => 'GALON-'.strtoupper(uniqid()),
+                'catatan' => $validated['catatan'] ?? null,
+                'status' => 'pending',
+                'metode_pembayaran' => $validated['metode_pembayaran'],
+                'metode_pengiriman' => $validated['metode_pengiriman'],
+                'waktu_transaksi' => now(),
+            ]);
 
-        NotificationService::send(
-            $request->user(),
-            'Pesanan Galon Berhasil 💧',
-            "Pesanan galon {$transaction->order_id} berhasil dibuat.",
-            'galon'
-        );
+            NotificationService::send(
+                $request->user(),
+                'Pesanan Galon Berhasil 💧',
+                "Pesanan galon {$galon->order_id} ({$validated['nama_galon']}) berhasil dibuat.",
+                'galon'
+            );
+
+            return $galon;
+        });
 
         return $this->success(
             GalonTransactionResource::make($transaction),
@@ -81,7 +81,8 @@ class GalonTransactionController extends Controller
     {
         $transactions = GalonTransaction::query()
             ->with('user:id,name,email,phone')
-            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
+            ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
+            ->when($request->query('metode_pengiriman'), fn ($q, $metode) => $q->where('metode_pengiriman', $metode))
             ->latest('waktu_transaksi')
             ->paginate(15);
 
@@ -91,11 +92,9 @@ class GalonTransactionController extends Controller
         );
     }
 
-    public function updateStatus(Request $request, string $id): JsonResponse
+    public function updateStatus(UpdateGalonStatusRequest $request, string $id): JsonResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:pending,paid,delivering,completed,cancelled'],
-        ]);
+        $validated = $request->validated();
 
         $transaction = GalonTransaction::with('user')->find($id);
 
@@ -105,14 +104,21 @@ class GalonTransactionController extends Controller
 
         $this->authorize('updateStatus', $transaction);
 
-        $transaction->update(['status' => $validated['status']]);
+        DB::transaction(function () use ($transaction, $validated) {
+            $transaction->update(['status' => $validated['status']]);
+        });
 
-        NotificationService::send(
-            $transaction->user,
-            'Update Pesanan Galon',
-            "Pesanan galon {$transaction->order_id} berstatus: {$validated['status']}.",
-            'galon'
-        );
+        [$title, $message] = match ($validated['status']) {
+            'paid' => ['Pembayaran Galon Diterima 💰', "Pesanan {$transaction->order_id} telah dibayar."],
+            'delivering' => ['Galon Sedang Diantar 🚚', "Pesanan {$transaction->order_id} sedang diantar."],
+            'completed' => ['Pesanan Galon Selesai ✅', "Pesanan {$transaction->order_id} telah selesai."],
+            'cancelled' => ['Pesanan Galon Dibatalkan ❌', "Pesanan {$transaction->order_id} dibatalkan."],
+            default => ['Update Pesanan Galon', "Pesanan {$transaction->order_id} berstatus: {$validated['status']}."],
+        };
+
+        NotificationService::send($transaction->user, $title, $message, 'galon');
+
+        AuditService::log('galon_status_update', GalonTransaction::class, $transaction->id, $request);
 
         return $this->success(
             GalonTransactionResource::make($transaction->fresh()->load('user')),
