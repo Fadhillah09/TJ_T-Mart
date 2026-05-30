@@ -18,9 +18,9 @@ return new class extends Migration
             $table->decimal('ongkir', 12, 2)->default(0);
             $table->string('order_id')->unique();
             $table->text('catatan')->nullable();
-            $table->enum('status', ['menunggu', 'diproses', 'dikirim', 'selesai', 'dibatalkan'])->default('menunggu');
-            $table->enum('metode_pembayaran', ['tunai', 'transfer', 'qris', 'ewallet'])->default('tunai');
-            $table->enum('metode_pengiriman', ['antar', 'pickup'])->default('antar');
+            $table->enum('status', ['pending', 'paid', 'delivering', 'completed', 'cancelled'])->default('pending');
+            $table->enum('metode_pembayaran', ['COD', 'MIDTRANS'])->default('COD');
+            $table->enum('metode_pengiriman', ['ambil', 'antar'])->default('antar');
             $table->timestamp('waktu_transaksi')->useCurrent();
             $table->timestamps();
         });

@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('role_id')->constrained('roles')->restrictOnDelete();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('phone')->nullable()->comment('Nomor telepon / WhatsApp');
             $table->string('foto')->nullable()->comment('Path foto profil');
@@ -27,7 +28,10 @@ return new class extends Migration
                 ->index()
                 ->comment('Lokasi pengantaran default — FK ditambahkan setelah tabel lokasi_delivery ada');
             $table->enum('status', ['aktif', 'nonaktif', 'suspended'])->default('aktif');
+            $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip', 45)->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

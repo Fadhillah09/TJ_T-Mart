@@ -3,17 +3,32 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Mart;
 use Illuminate\Http\JsonResponse;
-
 class MartController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(['message' => 'ok']);
+        $marts = Mart::query()
+            ->where('is_active', true)
+            ->where('status', 'aktif')
+            ->orderBy('nama_mart')
+            ->get();
+
+        return $this->success($marts, 'Daftar mart berhasil diambil');
     }
 
     public function show(string $id): JsonResponse
     {
-        return response()->json(['message' => 'ok']);
+        $mart = Mart::with('lokasis')
+            ->withCount('produkMarts')
+            ->where('is_active', true)
+            ->find($id);
+
+        if (! $mart) {
+            return $this->error('Mart tidak ditemukan.', null, 404);
+        }
+
+        return $this->success($mart, 'Detail mart berhasil diambil');
     }
 }

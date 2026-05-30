@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
             $table->decimal('nominal', 12, 2);
             $table->string('nomor_token')->unique()->comment('Kode token listrik yang dihasilkan sistem');
-            $table->enum('status', ['menunggu', 'diproses', 'selesai', 'dibatalkan'])->default('menunggu');
-            $table->enum('metode_pembayaran', ['tunai', 'transfer', 'qris', 'ewallet'])->default('tunai');
+            $table->enum('status', ['pending', 'completed', 'cancelled'])->default('completed');
+            $table->enum('metode_pembayaran', ['COD', 'MIDTRANS'])->default('COD');
             $table->timestamps();
         });
     }

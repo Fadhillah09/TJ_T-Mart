@@ -4,12 +4,14 @@ use App\Http\Controllers\Api\AbsensiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\GalonTransactionController;
 use App\Http\Controllers\Api\KategoriProdukController;
 use App\Http\Controllers\Api\LokasiDeliveryController;
 use App\Http\Controllers\Api\MartController;
 use App\Http\Controllers\Api\NotifikasiController;
 use App\Http\Controllers\Api\ProdukController;
 use App\Http\Controllers\Api\RiwayatPembelianController;
+use App\Http\Controllers\Api\TokenTransactionController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,8 +43,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/riwayat-pembelian', [RiwayatPembelianController::class, 'index']);
     Route::post('/riwayat-pembelian', [RiwayatPembelianController::class, 'store']);
     Route::get('/riwayat-pembelian/{id}', [RiwayatPembelianController::class, 'show']);
+    Route::get('/galon', [GalonTransactionController::class, 'index']);
+    Route::post('/galon', [GalonTransactionController::class, 'store']);
+    Route::get('/token', [TokenTransactionController::class, 'index']);
+    Route::post('/token', [TokenTransactionController::class, 'store']);
     Route::get('/notifikasi', [NotifikasiController::class, 'index']);
     Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead']);
+    Route::put('/notifikasi/read-all', [NotifikasiController::class, 'markAllRead']);
+
+    // Absensi (admin & kurir)
+    Route::post('/absensi', [AbsensiController::class, 'store'])
+        ->middleware('role:admin,superadmin,kurir');
 
     // Admin routes
     Route::middleware('role:admin,superadmin')->group(function () {
@@ -52,7 +63,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/produk/{id}', [ProdukController::class, 'destroy']);
         Route::get('/admin/riwayat-pembelian', [RiwayatPembelianController::class, 'adminIndex']);
         Route::put('/admin/riwayat-pembelian/{id}/status', [RiwayatPembelianController::class, 'updateStatus']);
+        Route::get('/admin/galon', [GalonTransactionController::class, 'adminIndex']);
+        Route::put('/admin/galon/{id}/status', [GalonTransactionController::class, 'updateStatus']);
         Route::get('/admin/absensi', [AbsensiController::class, 'index']);
-        Route::post('/admin/absensi', [AbsensiController::class, 'store']);
     });
 });
