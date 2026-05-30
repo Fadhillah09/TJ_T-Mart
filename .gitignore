@@ -1,0 +1,16 @@
+# Mengabaikan node_modules yang ada di root (luar)
+node_modules/
+
+# Mengabaikan file environment dan dependency Laravel di folder backend
+backend/.env
+backend/vendor/
+backend/storage/*.key
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+
+# Mengabaikan node_modules di dalam folder frontend kamu (jika ada)
+web-frontend/node_modules/
+web-frontend/.env
+KaryawanMart/node_modules/
+KaryawanMart/.env
