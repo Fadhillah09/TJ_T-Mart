@@ -3,15 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Produk\StoreProdukRequest;
+use App\Http\Requests\Produk\UpdateProdukRequest;
+use App\Http\Resources\ProdukResource;
 use App\Models\Produk;
 use App\Models\ProdukMart;
+use App\Models\Wishlist;
+use App\Services\AuditService;
+use App\Services\FileUploadService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 
 class ProdukController extends Controller
 {
+    public function __construct(
+        private readonly FileUploadService $fileUploadService
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user('sanctum');
@@ -23,17 +33,28 @@ class ProdukController extends Controller
             ->withCount('reviews as total_reviews')
             ->where('is_active', true)
             ->when($request->kategori_id, fn ($q, $id) => $q->where('kategori_id', $id))
-            ->when($request->search, fn ($q, $search) => $q->where('nama_produk', 'like', "%{$search}%"))
-            ->when($martId, function ($q) use ($martId) {
-                $q->with(['produkMarts' => fn ($pm) => $pm->where('mart_id', $martId)]);
-            }, fn ($q) => $q->with('produkMarts'));
+            ->when($request->search, fn ($q, $search) => $q->where('nama_produk', 'like', '%'.addcslashes($search, '%_\\').'%'))
+            ->when($martId, fn ($q) => $q->with(['produkMarts' => fn ($pm) => $pm->where('mart_id', $martId)]), fn ($q) => $q->with('produkMarts'));
 
         $produk = $query->latest()->paginate(20);
 
-        return $this->success($produk, 'Daftar produk berhasil diambil');
+        $wishlistedIds = $user
+            ? Wishlist::where('user_id', $user->id)->pluck('produk_id')->flip()
+            : collect();
+
+        $produk->getCollection()->transform(function (Produk $item) use ($wishlistedIds) {
+            $item->is_wishlisted = $wishlistedIds->has($item->id);
+
+            return $item;
+        });
+
+        return $this->success(
+            ProdukResource::collection($produk)->response()->getData(true),
+            'Daftar produk berhasil diambil'
+        );
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $produk = Produk::query()
             ->with([
@@ -50,67 +71,76 @@ class ProdukController extends Controller
             return $this->error('Produk tidak ditemukan.', null, 404);
         }
 
-        return $this->success($produk, 'Detail produk berhasil diambil');
+        $user = $request->user('sanctum');
+        $produk->is_wishlisted = $user
+            ? Wishlist::where('user_id', $user->id)->where('produk_id', $produk->id)->exists()
+            : false;
+
+        return $this->success(ProdukResource::make($produk), 'Detail produk berhasil diambil');
     }
 
     public function adminIndex(Request $request): JsonResponse
     {
+        $this->authorize('create', Produk::class);
+
         $produk = Produk::query()
             ->with(['kategori:id,nama_kategori', 'produkMarts.mart:id,nama_mart'])
             ->when($request->kategori_id, fn ($q, $id) => $q->where('kategori_id', $id))
-            ->when($request->search, fn ($q, $search) => $q->where('nama_produk', 'like', "%{$search}%"))
+            ->when($request->search, fn ($q, $search) => $q->where('nama_produk', 'like', '%'.addcslashes($search, '%_\\').'%'))
             ->latest()
             ->paginate(20);
 
-        return $this->success($produk, 'Daftar produk admin berhasil diambil');
+        return $this->success(
+            ProdukResource::collection($produk)->response()->getData(true),
+            'Daftar produk admin berhasil diambil'
+        );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreProdukRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nama_produk' => ['required', 'string', 'max:255'],
-            'kategori_id' => ['required', 'exists:kategori_produk,id'],
-            'harga' => ['required', 'integer', 'min:0'],
-            'stok' => ['required', 'integer', 'min:0'],
-            'deskripsi' => ['nullable', 'string'],
-            'gambar' => ['nullable', 'image', 'max:2048'],
-        ]);
-
+        $validated = $request->validated();
         $martId = $request->user()->active_mart_id;
+
         if (! $martId) {
-            return $this->error('Mart aktif belum dipilih. Set active_mart_id terlebih dahulu.', null, 422);
+            return $this->error('Mart aktif belum dipilih.', null, 422);
         }
 
-        $gambarPath = null;
-        if ($request->hasFile('gambar')) {
-            $gambarPath = $request->file('gambar')->store('produk', 'public');
+        try {
+            $produk = DB::transaction(function () use ($request, $validated, $martId) {
+                $gambarPath = null;
+                if ($request->hasFile('gambar')) {
+                    $gambarPath = $this->fileUploadService->uploadImage($request->file('gambar'), 'produk');
+                }
+
+                $produk = Produk::create([
+                    'nama_produk' => $validated['nama_produk'],
+                    'kategori_id' => $validated['kategori_id'],
+                    'harga' => $validated['harga'],
+                    'stok' => $validated['stok'],
+                    'deskripsi' => $validated['deskripsi'] ?? null,
+                    'gambar' => $gambarPath,
+                    'is_active' => true,
+                ]);
+
+                ProdukMart::create([
+                    'produk_id' => $produk->id,
+                    'mart_id' => $martId,
+                    'stok_lokal' => $validated['stok'],
+                    'harga_lokal' => $validated['harga'],
+                ]);
+
+                return $produk->load(['kategori', 'produkMarts.mart']);
+            });
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), null, 422);
         }
 
-        $produk = DB::transaction(function () use ($validated, $gambarPath, $martId) {
-            $produk = Produk::create([
-                'nama_produk' => $validated['nama_produk'],
-                'kategori_id' => $validated['kategori_id'],
-                'harga' => $validated['harga'],
-                'stok' => $validated['stok'],
-                'deskripsi' => $validated['deskripsi'] ?? null,
-                'gambar' => $gambarPath,
-                'is_active' => true,
-            ]);
+        AuditService::log('product_create', Produk::class, $produk->id, $request);
 
-            ProdukMart::create([
-                'produk_id' => $produk->id,
-                'mart_id' => $martId,
-                'stok_lokal' => $validated['stok'],
-                'harga_lokal' => $validated['harga'],
-            ]);
-
-            return $produk->load(['kategori', 'produkMarts.mart']);
-        });
-
-        return $this->success($produk, 'Produk berhasil ditambahkan', 201);
+        return $this->success(ProdukResource::make($produk), 'Produk berhasil ditambahkan', 201);
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateProdukRequest $request, string $id): JsonResponse
     {
         $produk = Produk::find($id);
 
@@ -118,37 +148,40 @@ class ProdukController extends Controller
             return $this->error('Produk tidak ditemukan.', null, 404);
         }
 
-        $validated = $request->validate([
-            'nama_produk' => ['sometimes', 'required', 'string', 'max:255'],
-            'kategori_id' => ['sometimes', 'required', 'exists:kategori_produk,id'],
-            'harga' => ['sometimes', 'required', 'integer', 'min:0'],
-            'stok' => ['sometimes', 'required', 'integer', 'min:0'],
-            'deskripsi' => ['nullable', 'string'],
-            'gambar' => ['nullable', 'image', 'max:2048'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
-        if ($request->hasFile('gambar')) {
-            if ($produk->gambar) {
-                Storage::disk('public')->delete($produk->gambar);
+        try {
+            if ($request->hasFile('gambar')) {
+                $this->fileUploadService->delete($produk->gambar);
+                $validated['gambar'] = $this->fileUploadService->uploadImage($request->file('gambar'), 'produk');
             }
-            $validated['gambar'] = $request->file('gambar')->store('produk', 'public');
+
+            $produk->update($validated);
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), null, 422);
         }
 
-        $produk->update($validated);
+        AuditService::log('product_update', Produk::class, $produk->id, $request);
 
-        return $this->success($produk->fresh()->load(['kategori', 'produkMarts.mart']), 'Produk berhasil diperbarui');
+        return $this->success(
+            ProdukResource::make($produk->fresh()->load(['kategori', 'produkMarts.mart'])),
+            'Produk berhasil diperbarui'
+        );
     }
 
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $produk = Produk::find($id);
 
         if (! $produk) {
             return $this->error('Produk tidak ditemukan.', null, 404);
         }
+
+        $this->authorize('delete', $produk);
 
         $produk->delete();
+
+        AuditService::log('product_delete', Produk::class, $produk->id, $request);
 
         return $this->success(null, 'Produk berhasil dihapus');
     }

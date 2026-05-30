@@ -12,8 +12,10 @@ class AbsensiController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Absensi::class);
+
         $validated = $request->validate([
-            'koordinat_absen' => ['required', 'string'],
+            'koordinat_absen' => ['required', 'string', 'max:100'],
         ]);
 
         $user = $request->user();
@@ -21,10 +23,11 @@ class AbsensiController extends Controller
 
         $absensi = Absensi::where('user_id', $user->id)
             ->whereDate('created_at', $today)
+            ->whereNull('jam_pulang')
             ->latest()
             ->first();
 
-        if (! $absensi || $absensi->jam_pulang !== null) {
+        if (! $absensi) {
             $now = Carbon::now();
             $batas = Carbon::today()->setTime(8, 0);
 
@@ -39,19 +42,17 @@ class AbsensiController extends Controller
             return $this->success($absensi, 'Absen masuk berhasil', 201);
         }
 
-        if ($absensi->jam_masuk && ! $absensi->jam_pulang) {
-            $absensi->update([
-                'jam_pulang' => Carbon::now()->format('H:i:s'),
-            ]);
+        $absensi->update([
+            'jam_pulang' => Carbon::now()->format('H:i:s'),
+        ]);
 
-            return $this->success($absensi->fresh(), 'Absen pulang berhasil');
-        }
-
-        return $this->error('Absensi hari ini sudah lengkap.', null, 422);
+        return $this->success($absensi->fresh(), 'Absen pulang berhasil');
     }
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Absensi::class);
+
         $absensi = Absensi::query()
             ->with('user:id,name,email,role_id')
             ->when($request->user_id, fn ($q, $userId) => $q->where('user_id', $userId))
