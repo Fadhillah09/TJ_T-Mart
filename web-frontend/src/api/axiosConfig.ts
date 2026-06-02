@@ -1,23 +1,37 @@
-import axios from 'axios';
+import axios from 'axios'
 
-// 1. Membuat instance axios agar lebih rapi
 const api = axios.create({
-    // Ganti dengan alamat URL Laravel kamu (hasil dari php artisan serve)
-    baseURL: 'http://127.0.0.1:8000/api', 
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    },
-});
+  baseURL: 'http://127.0.0.1:8000/api',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+})
 
-// 2. Interceptor: Otomatis menyelipkan Token Login ke setiap request
+// Request: attach token
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        // Ini standar keamanan agar API tahu siapa yang sedang akses (Admin/Kurir)
-        config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const stored = localStorage.getItem('auth-storage')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      const token = parsed?.state?.token
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
-    return config;
-});
+  } catch {}
+  return config
+})
 
-export default api;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('auth-storage')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+export default api
