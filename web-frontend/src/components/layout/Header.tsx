@@ -1,25 +1,23 @@
 import { useState } from "react"
+import { useAuthStore } from "@/store/authStore"
+import { useCartStore } from "@/store/cartStore"
+import { useNotifStore } from "@/store/notifStore"
+import { useAuth } from "@/hooks/useAuth"
+import { Link } from "react-router-dom"
 import "@/styles/header.css"
 
 interface HeaderProps {
   isUser?: boolean
-  cartCount?: number
-  wishlistCount?: number
-  notifCount?: number
-  user?: {
-    name: string
-    avatar?: string | null
-  }
 }
 
-export default function Header({
-  isUser = true,
-  cartCount = 0,
-  wishlistCount = 0,
-  notifCount = 0,
-  user,
-}: HeaderProps) {
+export default function Header({ isUser = true }: HeaderProps) {
   const [open, setOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  
+  const { user } = useAuthStore()
+  const { totalItems } = useCartStore()
+  const { unreadCount } = useNotifStore()
+  const { logout } = useAuth()
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-white border-b border-[#930014]/20 shadow-sm">
@@ -38,9 +36,9 @@ export default function Header({
             </button>
 
             {/* LOGO */}
-            <a href="/" className="text-2xl font-extrabold tracking-tighter">
+            <Link to="/" className="text-2xl font-extrabold tracking-tighter">
               <span className="logo-animate">TJ&TMart</span>
-            </a>
+            </Link>
           </div>
 
           {/* SEARCH */}
@@ -62,43 +60,70 @@ export default function Header({
             {isUser && (
               <>
                 {/* WISHLIST */}
-                <a href="/wishlist" className="nav-icon-btn">
+                <Link to="/wishlist" className="nav-icon-btn">
                   ❤️
-                  {wishlistCount > 0 && (
-                    <span className="nav-badge">{wishlistCount}</span>
-                  )}
-                </a>
+                </Link>
 
                 {/* CART */}
-                <a href="/cart" className="nav-icon-btn">
+                <Link to="/cart" className="nav-icon-btn relative">
                   🛒
-                  {cartCount > 0 && (
-                    <span className="nav-badge">{cartCount}</span>
+                  {totalItems > 0 && (
+                    <span className="nav-badge">{totalItems}</span>
                   )}
-                </a>
+                </Link>
 
                 {/* NOTIF */}
-                <a href="/notifications" className="nav-icon-btn">
+                <Link to="/notifications" className="nav-icon-btn relative">
                   🔔
-                  {notifCount > 0 && (
-                    <span className="nav-badge">{notifCount}</span>
+                  {unreadCount > 0 && (
+                    <span className="nav-badge">{unreadCount}</span>
                   )}
-                </a>
+                </Link>
               </>
             )}
 
             {/* PROFILE */}
-            {user && (
-              <div className="flex items-center gap-2 px-3 h-11 rounded-full profile-btn-idle">
-                <span className="text-sm font-bold">{user.name}</span>
-                <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-                  {user.avatar ? (
-                    <img src={user.avatar} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="flex items-center justify-center h-full">👤</span>
-                  )}
-                </div>
+            {user ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 px-3 h-11 rounded-full profile-btn-idle hover:bg-gray-100 transition-colors focus:outline-none"
+                >
+                  <span className="text-sm font-bold">{user.name}</span>
+                  <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
+                    {user.foto_url ? (
+                      <img src={user.foto_url} className="w-full h-full object-cover" alt="Profile" />
+                    ) : (
+                      <span className="flex items-center justify-center h-full">👤</span>
+                    )}
+                  </div>
+                </button>
+                
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100">
+                    <div className="py-1">
+                      <Link to="/profil" onClick={() => setDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Profil
+                      </Link>
+                      <Link to="/orders" onClick={() => setDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Riwayat Pembelian
+                      </Link>
+                    </div>
+                    <div className="py-1">
+                      <button 
+                        onClick={() => { setDropdownOpen(false); logout(); }} 
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        Keluar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
+            ) : (
+              <Link to="/login" className="text-sm font-semibold text-red-600 hover:text-red-700 transition-colors">
+                Masuk
+              </Link>
             )}
           </div>
         </div>
@@ -107,9 +132,9 @@ export default function Header({
       {/* MOBILE MENU */}
       {open && (
         <div className="md:hidden bg-white border-t px-4 py-4 space-y-2 shadow-xl">
-          <a href="/wishlist" className="mobile-link">Wishlist</a>
-          <a href="/cart" className="mobile-link">Cart</a>
-          <a href="/notifications" className="mobile-link">Notifikasi</a>
+          <Link to="/wishlist" className="mobile-link block py-2">Wishlist</Link>
+          <Link to="/cart" className="mobile-link block py-2">Cart ({totalItems})</Link>
+          <Link to="/notifications" className="mobile-link block py-2">Notifikasi ({unreadCount})</Link>
         </div>
       )}
     </nav>

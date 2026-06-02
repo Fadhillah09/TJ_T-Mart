@@ -1,45 +1,34 @@
-import Header from "@/components/layout/Header"
-import SubHeader from "@/components/layout/SubHeader"
-import Footer from "@/components/layout/Footer"
-
-interface User {
-  id: number
-  name: string
-  role: "user" | "admin" | "super_admin"
-}
-
-interface Mart {
-  id: number
-  nama_mart: string
-}
+import React, { useEffect } from 'react';
+import Header from '@/components/layout/Header';
+import SubHeader from '@/components/layout/SubHeader';
+import Footer from '@/components/layout/Footer';
+import { Toaster } from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 
 interface MainLayoutProps {
-  children: React.ReactNode
-  user?: User | null
-  activeMart?: Mart | null
+  children: React.ReactNode;
 }
 
-export default function MainLayout({
-  children,
-  user,
-  activeMart,
-}: MainLayoutProps) {
-  const isUser = user?.role === "user"
+export default function MainLayout({ children }: MainLayoutProps) {
+  const { user } = useAuthStore();
+  const isUser = user?.role?.name?.toLowerCase() === 'user' || !user;
+
+  // For syncing stores, we could use effects here to fetch if necessary,
+  // but it's typically done by hooks inside components (e.g. useCart).
 
   return (
     <>
-      <Header
-        isUser={isUser}
-        user={user ? { name: user.name } : undefined}
-      />
-
-      {isUser && <SubHeader activeMart={activeMart} />}
-
+      <Toaster position="top-right" />
+      
+      <Header isUser={isUser} />
+      
+      {isUser && <SubHeader activeMart={user?.active_mart} />}
+      
       <main className={isUser ? "pt-[120px]" : "pt-[80px]"}>
         {children}
       </main>
-
+      
       <Footer isUser={isUser} />
     </>
-  )
+  );
 }

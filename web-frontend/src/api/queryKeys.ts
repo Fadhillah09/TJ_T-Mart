@@ -1,0 +1,18 @@
+export const queryKeys = {
+  auth: ['auth'] as const,
+  user: ['user'] as const,
+  produk: (params?: object) => ['produk', params] as const,
+  produkDetail: (id: number) => ['produk', id] as const,
+  kategori: ['kategori'] as const,
+  banners: ['banners'] as const,
+  cart: ['cart'] as const,
+  wishlist: ['wishlist'] as const,
+  orders: (params?: object) => ['orders', params] as const,
+  orderDetail: (id: number) => ['orders', id] as const,
+  notifikasi: ['notifikasi'] as const,
+  galon: ['galon'] as const,
+  token: ['token'] as const,
+  mart: ['mart'] as const,
+  lokasi: (martId?: number) => ['lokasi', martId] as const,
+  kamar: ['kamar'] as const,
+};

@@ -1,0 +1,13 @@
+import { create } from 'zustand';
+
+interface NotifState {
+  unreadCount: number;
+  setUnreadCount: (count: number) => void;
+  decrement: () => void;
+}
+
+export const useNotifStore = create<NotifState>((set) => ({
+  unreadCount: 0,
+  setUnreadCount: (count) => set({ unreadCount: count }),
+  decrement: () => set((state) => ({ unreadCount: Math.max(0, state.unreadCount - 1) })),
+}));
