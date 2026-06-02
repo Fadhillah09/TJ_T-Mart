@@ -12,20 +12,24 @@ class RegisterController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'no_telp' => 'required',
-            'status_penghuni' => 'required'
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|string|email|unique:users',
+            'password'        => 'required|string|min:8|confirmed',
+            'no_telp'         => 'required',
+            'status_penghuni' => 'required|boolean',
+            'lokasi_id'       => 'nullable|exists:lokasi_delivery,id',
+            'nomor_kamar'     => 'nullable|string',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'no_telp' => $request->no_telp,
-            'status_penghuni' => $request->status_penghuni,
-            'role' => 'Kurir', // Default role setelah daftar
+            'phone'           => $request->no_telp, 
+            'penghuni_asrama'  => $request->status_penghuni,  
+            'lokasi_id'        => $request->lokasi_id,        
+            'nomor_kamar'      => $request->nomor_kamar,      
+            'role_id'          => 3, 
         ]);
 
         return response()->json([

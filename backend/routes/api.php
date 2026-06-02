@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\RiwayatPembelianController;
 use App\Http\Controllers\Api\TokenTransactionController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\MasterKamarController;
+
 
 Route::middleware('throttle:auth')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
@@ -40,7 +42,6 @@ Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function 
         Route::get('/produk/{id}', [ProdukController::class, 'show']);
         Route::get('/kategori', [KategoriProdukController::class, 'index']);
         Route::get('/banner', [BannerController::class, 'index']);
-        Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
     });
 
     Route::get('/cart', [CartController::class, 'index']);

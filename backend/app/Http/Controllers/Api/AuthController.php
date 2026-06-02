@@ -44,6 +44,7 @@ class AuthController extends Controller
             'password' => $validated['password'],
             'phone' => $validated['phone'] ?? null,
             'nomor_kamar' => $validated['nomor_kamar'] ?? null,
+            'lokasi_id' => $validated['lokasi_id'] ?? null,
             'penghuni_asrama' => $validated['penghuni_asrama'] ?? false,
             'status' => 'aktif',
         ]);
