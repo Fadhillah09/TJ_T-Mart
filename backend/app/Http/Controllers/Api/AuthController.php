@@ -37,19 +37,26 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
+        $fotoPath = null;
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('users', 'public');
+        }
+
         $user = User::create([
             'role_id' => 4,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
             'phone' => $validated['phone'] ?? null,
+            'foto' => $fotoPath,
             'nomor_kamar' => $validated['nomor_kamar'] ?? null,
             'lokasi_id' => $validated['lokasi_id'] ?? null,
             'penghuni_asrama' => $validated['penghuni_asrama'] ?? false,
+            'email_verified_at' => now(),
             'status' => 'aktif',
         ]);
 
-        $user->sendEmailVerificationNotification();
+        // $user->sendEmailVerificationNotification();
 
         AuditService::log('register', User::class, $user->id, $request);
 

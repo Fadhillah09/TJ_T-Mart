@@ -24,7 +24,9 @@ class RegisterRequest extends FormRequest
             ],
             'phone' => ['nullable', 'string', 'max:20'],
             'nomor_kamar' => ['nullable', 'string', 'max:10'],
+            'lokasi_id' => ['nullable', 'integer', 'exists:lokasi_delivery,id'],
             'penghuni_asrama' => ['nullable', 'boolean'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
     }
 }

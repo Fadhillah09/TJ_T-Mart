@@ -22,6 +22,10 @@ Route::middleware('throttle:auth')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
 
+Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
+Route::get('/kamar', [MasterKamarController::class, 'index']);
+
+
 Route::get('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:auth'])
     ->name('verification.verify');

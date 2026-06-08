@@ -19,6 +19,8 @@ class ProdukResource extends JsonResource
             'gambar' => $this->gambar,
             'gambar_url' => $this->gambar ? asset('storage/'.$this->gambar) : null,
             'is_active' => $this->is_active,
+            'status_ketersediaan' => $this->status_ketersediaan,
+            'persentase_diskon' => $this->persentase_diskon,
             'avg_rating' => $this->when(isset($this->avg_rating), round((float) $this->avg_rating, 2)),
             'total_reviews' => $this->when(isset($this->total_reviews), (int) $this->total_reviews),
             'is_wishlisted' => $this->when(isset($this->is_wishlisted), (bool) $this->is_wishlisted),

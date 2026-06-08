@@ -49,7 +49,7 @@ class ProdukController extends Controller
             ->where('is_active', true)
             ->when($request->kategori_id, fn ($q, $id) => $q->where('kategori_id', $id))
             ->when($request->search, fn ($q, $search) => $q->where('nama_produk', 'like', '%'.addcslashes($search, '%_\\').'%'))
-            ->when($martId, fn ($q) => $q->with(['produkMarts' => fn ($pm) => $pm->where('mart_id', $martId)]), fn ($q) => $q->with('produkMarts'));
+            ->when($martId, fn ($q) => $q->with(['produkMarts' => fn ($pm) => $pm->with('mart')->where('mart_id', $martId)]), fn ($q) => $q->with('produkMarts.mart'));
 
         $produk = $query->latest()->paginate(20);
 
