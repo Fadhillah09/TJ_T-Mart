@@ -2,12 +2,11 @@ import React from 'react';
 import { cn } from '@/utils';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'new' | 'sale' | 'hot' | 'out-of-stock' | 'default';
+  variant?:  'sale' | 'hot' | 'out-of-stock' | 'default';
 }
 
 export const Badge: React.FC<BadgeProps> = ({ className, variant = 'default', children, ...props }) => {
   const variants = {
-    new: 'bg-green-100 text-green-800',
     sale: 'bg-yellow-100 text-yellow-800',
     hot: 'bg-red-100 text-red-800',
     'out-of-stock': 'bg-gray-100 text-gray-800',

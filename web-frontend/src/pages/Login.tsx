@@ -1,39 +1,65 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 const Login = () => {
-    // Pengganti x-data Alpine.js
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { login, isLoggingIn } = useAuth();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        // Karena ini Front-end terpisah, kita cegah refresh halaman
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setLoading(true);
-        
-        // Logika kirim data ke API Laravel akan diletakkan di sini nanti
-        console.log("Form submitted");
+
+        const formData = new FormData(e.currentTarget);
+        const dataPayload = Object.fromEntries(formData.entries());
+
+        try {
+            await login(dataPayload);
+            toast.success("Berhasil masuk akun!");
+        } catch (error: any) {
+            console.log("Error detail dari Laravel:", error.response?.data);
+            
+            // 1. Ambil data error dari response API
+            const responseData = error.response?.data;
+            let pesanError = "Kredensial salah atau terjadi kesalahan koneksi.";
+
+            if (responseData) {
+                // 2. Jika ada error validasi spesifik (misal dari Laravel Validation)
+                if (responseData.errors) {
+                    // Mengambil pesan error pertama yang ditemukan (misal error email atau password)
+                    const firstErrorKey = Object.keys(responseData.errors)[0];
+                    pesanError = responseData.errors[firstErrorKey][0];
+                } 
+                // 3. Jika ada pesan custom langsung dari backend (misal: 'Email atau password salah')
+                else if (responseData.message) {
+                    pesanError = responseData.message;
+                }
+            }
+
+            // 4. Tampilkan pesan yang sesuai ke user
+            toast.error(pesanError);
+        }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex bg-white font-sans overflow-hidden">
             {/* SISI KIRI: BRANDING */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-black h-full overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" 
-                     className="absolute inset-0 w-full h-full object-cover opacity-40 blur-md scale-110" 
-                     alt="Background Login" />
-                
+                <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
+                    className="absolute inset-0 w-full h-full object-cover opacity-40 blur-md scale-110"
+                    alt="Background Login" />
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
 
                 <div className="relative z-10 w-full flex flex-col justify-between p-12 xl:p-16 text-white h-full">
                     <div>
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-10 w-20 bg-[#d50d27] rounded-xl flex items-center justify-center shadow-lg shadow-[#d50d27]/40">
-                                <span className="text-xl font-bold">TJ&T</span>
+                                <span className="text-xl font-bold">TJ-T</span>
                             </div>
                             <span className="text-lg font-bold tracking-wide">Mart</span>
                         </div>
-                        
+
                         <h1 className="text-4xl xl:text-5xl font-bold leading-tight mb-4">
                             Selamat Datang<br />Kembali!
                         </h1>
@@ -67,7 +93,7 @@ const Login = () => {
             {/* SISI KANAN: FORM LOGIN */}
             <div className="w-full lg:w-1/2 h-full bg-white overflow-y-auto overflow-x-hidden relative flex items-center">
                 <div className="w-full py-10 px-6 sm:px-12 lg:px-16 xl:px-20">
-                    
+
                     <div className="mb-8">
                         <h2 className="text-3xl font-bold text-gray-900">Masuk Akun</h2>
                         <p className="text-sm text-gray-500 mt-2">Gunakan akun terdaftar Anda untuk mulai berbelanja.</p>
@@ -77,9 +103,9 @@ const Login = () => {
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
-                            <input type="email" name="email" required autoFocus 
-                                   className="w-full border-gray-200 bg-gray-50 rounded-xl focus:ring-[#d50d27] focus:border-[#d50d27] focus:bg-white transition-all py-3 px-4 text-sm shadow-sm"
-                                   placeholder="Masukkan email Anda" />
+                            <input type="email" name="email" required autoFocus
+                                className="w-full border-gray-200 bg-gray-50 rounded-xl focus:ring-[#d50d27] focus:border-[#d50d27] focus:bg-white transition-all py-3 px-4 text-sm shadow-sm"
+                                placeholder="Masukkan email Anda" />
                         </div>
 
                         {/* Password */}
@@ -91,12 +117,12 @@ const Login = () => {
                                 </Link>
                             </div>
                             <div className="relative">
-                                <input type={showPassword ? 'text' : 'password'} name="password" required 
-                                       className="w-full border-gray-200 bg-gray-50 rounded-xl focus:ring-[#d50d27] focus:border-[#d50d27] focus:bg-white transition-all py-3 px-4 pr-12 text-sm shadow-sm"
-                                       placeholder="••••••••" />
-                                
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} 
-                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#d50d27]">
+                                <input type={showPassword ? 'text' : 'password'} name="password" required
+                                    className="w-full border-gray-200 bg-gray-50 rounded-xl focus:ring-[#d50d27] focus:border-[#d50d27] focus:bg-white transition-all py-3 px-4 pr-12 text-sm shadow-sm"
+                                    placeholder="••••••••" />
+
+                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#d50d27]">
                                     {!showPassword ? (
                                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -108,6 +134,7 @@ const Login = () => {
                                         </svg>
                                     )}
                                 </button>
+                                
                             </div>
                         </div>
 
@@ -121,15 +148,15 @@ const Login = () => {
 
                         {/* Submit Button */}
                         <div>
-                            <button type="submit" disabled={loading}
-                                    className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-xl shadow-[#d50d27]/20 text-sm font-bold text-white bg-[#d50d27] hover:bg-black transition-all duration-300 transform active:scale-[0.98]">
-                                {loading && (
+                            <button type="submit" disabled={isLoggingIn}
+                                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-xl shadow-[#d50d27]/20 text-sm font-bold text-white bg-[#d50d27] hover:bg-black transition-all duration-300 transform active:scale-[0.98]">
+                                {isLoggingIn && (
                                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
                                     </svg>
                                 )}
-                                <span>{loading ? 'Memverifikasi...' : 'Masuk Sekarang'}</span>
+                                <span>{isLoggingIn ? 'Memverifikasi...' : 'Masuk Sekarang'}</span>
                             </button>
                         </div>
 
@@ -143,7 +170,7 @@ const Login = () => {
                             </p>
                         </div>
                     </form>
-                    
+
                     <div className="mt-12 text-center">
                         <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">
                             &copy; {new Date().getFullYear()} TJ-T Mart. Excellence in Service.

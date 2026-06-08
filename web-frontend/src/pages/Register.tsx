@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { martApi } from '@/api/mart';
+import { queryKeys } from '@/api/queryKeys';
+import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 const Register = () => {
-    // State untuk menggantikan x-data Alpine.js
-    const [isAsrama, setIsAsrama] = useState('1'); // Default '1' untuk Penghuni Asrama
+    const [isAsrama, setIsAsrama] = useState('1');
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
     const updatePreview = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -15,15 +18,48 @@ const Register = () => {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const { data: lokasiData, isLoading: loadingLokasi } = useQuery({
+        queryKey: queryKeys.lokasi(),
+        queryFn: () => martApi.getLokasi(),
+    });
+
+    const { data: kamarData, isLoading: loadingKamar } = useQuery({
+        queryKey: queryKeys.kamar,
+        queryFn: martApi.getKamar,
+    });
+
+    const { registerAsync, isRegistering } = useAuth();
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        // Logika API akan menyusul setelah Front-end beres
+        const formData = new FormData(e.target as HTMLFormElement);
+
+        // Hapus foto jika user tidak upload
+        const foto = formData.get('foto') as File;
+        if (foto && foto.size === 0) {
+            formData.delete('foto');
+        }
+
+        if (!formData.get('lokasi_id')) formData.delete('lokasi_id');
+        if (!formData.get('nomor_kamar')) formData.delete('nomor_kamar');
+
+        if (formData.get('penghuni_asrama') === '0') {
+            formData.delete('lokasi_id');
+            formData.delete('nomor_kamar');
+        }
+
+        try {
+            await registerAsync(formData);
+            // Notifikasi sukses sudah dihandle oleh useAuth
+        } catch (error: any) {
+            console.log("Validasi Laravel Gagal:", error.response?.data);
+            // Notifikasi error sudah dihandle oleh useAuth
+        }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex bg-white font-sans overflow-hidden">
-            
+
             {/* BAGIAN KIRI: BRANDING (Identik dengan Login) */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-black h-full overflow-hidden">
                 <img src="https://images.unsplash.com/photo-1580913428706-c311ab527eb3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
@@ -36,7 +72,7 @@ const Register = () => {
                     <div>
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-10 w-20 bg-[#d50d27] rounded-xl flex items-center justify-center shadow-lg shadow-[#d50d27]/40">
-                                <span className="text-xl font-bold">TJ&T</span>
+                                <span className="text-xl font-bold">TJ-T</span>
                             </div>
                             <span className="text-lg font-semibold tracking-wide">Mart</span>
                         </div>
@@ -74,7 +110,7 @@ const Register = () => {
             {/* BAGIAN KANAN: FORM REGISTER */}
             <div className="w-full lg:w-1/2 h-full bg-gray-50 overflow-y-auto">
                 <div className="min-h-full flex flex-col justify-center py-10 px-6 sm:px-12 lg:px-16 xl:px-20">
-                    
+
                     <div className="mb-6 text-center lg:text-left">
                         <h2 className="text-2xl xl:text-3xl font-bold text-gray-900">Buat Akun Baru 🚀</h2>
                         <p className="text-sm text-gray-500 mt-1">Lengkapi data diri Anda untuk memulai.</p>
@@ -99,7 +135,7 @@ const Register = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">No. WhatsApp</label>
-                                <input type="text" name="no_telp" required
+                                <input type="text" name="phone" required
                                     className="w-full border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#d50d27]/20 focus:border-[#d50d27] py-2.5 px-4 text-sm bg-white outline-none transition-all"
                                     placeholder="0812..." />
                             </div>
@@ -111,17 +147,17 @@ const Register = () => {
 
                             <div className="flex gap-6 mb-2">
                                 <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input type="radio" name="status_penghuni" value="1" 
-                                           checked={isAsrama === '1'} 
-                                           onChange={(e) => setIsAsrama(e.target.value)}
-                                           className="w-4 h-4 text-[#d50d27] focus:ring-[#d50d27] accent-[#d50d27]" />
+                                    <input type="radio" name="penghuni_asrama" value="1"
+                                        checked={isAsrama === '1'}
+                                        onChange={(e) => setIsAsrama(e.target.value)}
+                                        className="w-4 h-4 text-[#d50d27] focus:ring-[#d50d27] accent-[#d50d27]" />
                                     <span className="text-sm font-bold text-gray-600 group-hover:text-[#d50d27] transition-colors">Penghuni Asrama</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input type="radio" name="status_penghuni" value="0" 
-                                           checked={isAsrama === '0'} 
-                                           onChange={(e) => setIsAsrama(e.target.value)}
-                                           className="w-4 h-4 text-[#d50d27] focus:ring-[#d50d27] accent-[#d50d27]" />
+                                    <input type="radio" name="penghuni_asrama" value="0"
+                                        checked={isAsrama === '0'}
+                                        onChange={(e) => setIsAsrama(e.target.value)}
+                                        className="w-4 h-4 text-[#d50d27] focus:ring-[#d50d27] accent-[#d50d27]" />
                                     <span className="text-sm font-bold text-gray-600 group-hover:text-[#d50d27] transition-colors">Luar Asrama</span>
                                 </label>
                             </div>
@@ -130,15 +166,27 @@ const Register = () => {
                                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-50 pt-4">
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-400 mb-1 uppercase tracking-wider">Gedung Asrama</label>
-                                        <select name="lokasi_id" className="w-full border-2 border-gray-100 rounded-lg focus:border-[#d50d27] py-2 px-3 bg-gray-50 text-sm font-semibold outline-none">
-                                            <option value="">-- Pilih Gedung --</option>
+                                        <select name="lokasi_id" disabled={loadingLokasi} className="w-full border-2 border-gray-100 rounded-lg focus:border-[#d50d27] py-2 px-3 bg-gray-50 text-sm font-semibold outline-none">
+                                            <option value="">{loadingLokasi ? 'Loading...' : '-- Pilih Gedung --'}</option>
+                                            {lokasiData?.data?.map((lokasi: any) => (
+                                                <option key={lokasi.id} value={lokasi.id}>{lokasi.nama_lokasi}</option>
+                                            ))}
                                         </select>
                                     </div>
 
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-400 mb-1 uppercase tracking-wider">Nomor Kamar</label>
-                                        <select name="nomor_kamar" className="w-full border-2 border-gray-100 rounded-lg focus:border-[#d50d27] py-2 px-3 bg-gray-50 text-sm font-semibold outline-none">
-                                            <option value="">-- Pilih Nomor --</option>
+                                        <select name="nomor_kamar" disabled={loadingKamar} className="w-full border-2 border-gray-100 rounded-lg focus:border-[#d50d27] py-2 px-3 bg-gray-50 text-sm font-semibold outline-none">
+                                            <option value="">{loadingKamar ? 'Loading...' : '-- Pilih Nomor --'}</option>
+                                            {kamarData?.data?.map((kamar: any) => {
+                                                const nomor = kamar.nomor_kamar || kamar.nama_kamar || kamar.id;
+                                                const lantai = kamar.lantai || String(nomor).charAt(0);
+                                                return (
+                                                    <option key={kamar.id} value={nomor}>
+                                                        {nomor} (Lantai {lantai})
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
                                     </div>
                                 </div>
@@ -169,14 +217,28 @@ const Register = () => {
                             </div>
                         </div>
 
+                        {/* Foto Profil */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Foto Profil (Opsional)</label>
+                            <div className="flex items-center gap-4">
+                                {photoPreview && (
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
+                                        <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <input type="file" name="foto" accept="image/*" onChange={updatePreview}
+                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all border-2 border-dashed border-gray-200 rounded-lg p-2" />
+                            </div>
+                        </div>
+
                         {/* Submit Button */}
                         <div className="pt-4">
-                            <button type="submit" disabled={loading}
+                            <button type="submit" disabled={isRegistering}
                                 className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-[#d50d27]/30 text-sm font-bold text-white bg-[#d50d27] hover:bg-black transition-all duration-200 transform hover:-translate-y-0.5">
-                                {loading && (
+                                {isRegistering && (
                                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
                                 )}
-                                <span>{loading ? 'Mendaftarkan Akun...' : 'Daftar Sekarang'}</span>
+                                <span>{isRegistering ? 'Mendaftarkan Akun...' : 'Daftar Sekarang'}</span>
                             </button>
                         </div>
 

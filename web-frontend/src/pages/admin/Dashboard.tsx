@@ -21,7 +21,7 @@ const DashboardAdmin = () => {
             {/* Sidebar khusus Super Admin */}
             <div className="w-64 bg-gray-900 text-white hidden lg:block p-6">
                 <div className="flex items-center gap-3 mb-10">
-                    <div className="h-8 w-16 bg-[#d50d27] rounded-lg flex items-center justify-center font-bold text-xs shadow-lg shadow-[#d50d27]/40">TJ&T</div>
+                    <div className="h-8 w-16 bg-[#d50d27] rounded-lg flex items-center justify-center font-bold text-xs shadow-lg shadow-[#d50d27]/40">TJ-T</div>
                     <span className="font-bold">Super Admin</span>
                 </div>
                 
