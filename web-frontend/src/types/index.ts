@@ -56,10 +56,13 @@ export interface Produk {
   gambar?: string;
   gambar_url?: string;
   is_active: boolean;
+  status_ketersediaan?: string;
+  persentase_diskon?: number;
   avg_rating?: number;
   total_reviews?: number;
   is_wishlisted?: boolean;
   kategori?: KategoriProduk;
+  produk_marts?: any[];
   created_at?: string;
 }
 

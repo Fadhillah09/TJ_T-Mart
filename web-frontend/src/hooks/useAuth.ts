@@ -13,7 +13,7 @@ export const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: (response) => {
-      setAuth(response.data.user, response.data.token);
+      setAuth(response.data.user, response.data.access_token);
       toast.success(response.message || 'Login berhasil');
       
       const roleName = response.data.user.role?.name?.toLowerCase();
@@ -25,15 +25,31 @@ export const useAuth = () => {
         navigate('/');
       }
     },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || 'Login gagal. Periksa email dan password.';
+      toast.error(message);
+    },
   });
 
   const registerMutation = useMutation({
     mutationFn: authApi.register,
     onSuccess: (response) => {
-      toast.success(response.message || 'Registrasi berhasil');
+      toast.success(response.message || 'Registrasi berhasil! Silakan cek email untuk verifikasi.');
       navigate('/login');
     },
+    onError: (error: any) => {
+      const errors = error?.response?.data?.errors;
+      if (errors) {
+        // Show first validation error
+        const firstError = Object.values(errors)[0];
+        toast.error(Array.isArray(firstError) ? firstError[0] as string : String(firstError));
+      } else {
+        const message = error?.response?.data?.message || 'Registrasi gagal. Coba lagi.';
+        toast.error(message);
+      }
+    },
   });
+
 
   const logoutMutation = useMutation({
     mutationFn: authApi.logout,

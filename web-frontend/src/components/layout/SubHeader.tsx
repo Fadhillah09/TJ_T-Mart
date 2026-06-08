@@ -1,5 +1,6 @@
 import { useState } from "react"
-import "@/styles/sub-header.css"
+// @ts-ignore
+import '@styles/sub-header.css';
 
 interface Mart {
   id: number

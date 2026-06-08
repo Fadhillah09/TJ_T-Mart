@@ -1,3 +1,4 @@
+// @ts-ignore
 import "@/styles/footer.css"
 
 interface FooterProps {
@@ -23,7 +24,7 @@ export default function Footer({
               href="/"
               className="text-xl font-bold tracking-wide text-white hover:text-[#DB4B3A] transition"
             >
-              TJ&TMart
+              TJ-T Mart
             </a>
 
             <p className="text-[12px] text-gray-200 leading-relaxed max-w-[200px] font-medium opacity-90 mt-4">
@@ -73,7 +74,7 @@ export default function Footer({
         {/* BOTTOM */}
         <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[10px] font-bold text-red-300/60 uppercase tracking-widest">
-            © {year} TJ&TMart — All Rights Reserved.
+            © {year} TJ-T Mart — All Rights Reserved.
           </p>
 
           <div className="flex gap-6">

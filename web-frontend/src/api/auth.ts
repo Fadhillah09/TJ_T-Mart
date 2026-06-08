@@ -3,13 +3,18 @@ import { User, ApiResponse } from '@/types';
 
 export const authApi = {
   login: async (credentials: object) => {
-    const response = await api.post<ApiResponse<{ user: User; token: string }>>('/auth/login', credentials);
+    const response = await api.post<ApiResponse<{ user: User; access_token: string; token_type: string }>>('/auth/login', credentials);
     return response.data;
   },
-  register: async (data: object) => {
-    const response = await api.post<ApiResponse<{ user: User; token: string }>>('/auth/register', data);
+  register: async (formData: FormData) => {
+    const response = await api.post<ApiResponse<{ user: User }>>('/auth/register', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
+
   logout: async () => {
     const response = await api.post<ApiResponse<null>>('/auth/logout');
     return response.data;
