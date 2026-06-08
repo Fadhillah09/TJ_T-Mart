@@ -22,13 +22,16 @@ class Produk extends Model
         'stok',
         'gambar',
         'is_active',
+        'status_ketersediaan',
+        'persentase_diskon',
     ];
 
     protected function casts(): array
     {
         return [
-            'harga' => 'decimal:2',
-            'is_active' => 'boolean',
+            'harga'              => 'decimal:2',
+            'is_active'          => 'boolean',
+            'persentase_diskon'  => 'integer',
         ];
     }
 

@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             MasterKamarSeeder::class,
             UserSeeder::class,
             AdminSeeder::class,
+            ProdukSeeder::class,
         ]);
     }
 }
