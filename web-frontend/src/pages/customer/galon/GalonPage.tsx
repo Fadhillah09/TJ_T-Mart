@@ -50,7 +50,7 @@ const GalonPage = () => {
       <Header />
       <SubHeader />
 
-      <div className="pt-[120px] pb-24 bg-gray-50 min-h-screen px-4">
+      <div className="pt-[136px] pb-24 bg-gray-50 min-h-screen px-4">
         <div className="w-full max-w-xl mx-auto space-y-4">
 
             <div className="bg-white p-5 rounded-2xl border-2 border-gray-100 shadow-md">

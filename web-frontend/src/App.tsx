@@ -7,7 +7,10 @@ import DashboardAdmin from "./pages/admin/Dashboard";
 import KurirHome from "./pages/kurir/Home";
 import DeliveryMap from "./pages/kurir/DeliveryMap";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-import GalonPage from "@/pages/galon/GalonPage";
+import GalonPage from "@/pages/customer/galon/GalonPage";
+import TokenPage from "@/pages/customer/token/TokenPage";
+import TokenResult from "@/components/token/TokenResult";
+import TokenHistory from "@/components/token/TokenHistory";
 
 function App() {
   return (
@@ -56,6 +59,30 @@ function App() {
           element={
             <ErrorBoundary>
               <GalonPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/token"
+          element={
+            <ErrorBoundary>
+              <TokenPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/token/result/:id"
+          element={
+            <ErrorBoundary>
+              <TokenResult />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/token/history"
+          element={
+            <ErrorBoundary>
+              <TokenHistory />
             </ErrorBoundary>
           }
         />
