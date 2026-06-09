@@ -43,7 +43,7 @@ class ProdukController extends Controller
         $martId = $request->mart_id ?? $user?->active_mart_id;
 
         $query = Produk::query()
-            ->with(['kategori:id,nama_kategori'])
+            ->with(['kategori:id,nama_kategori', 'produkMarts.mart:id,nama_mart'])
             ->withAvg('reviews as avg_rating', 'rating')
             ->withCount('reviews as total_reviews')
             ->where('is_active', true)

@@ -102,7 +102,7 @@ class AuthController extends Controller
             return $this->error('Akun terkunci sementara, coba lagi dalam 15 menit', null, 429);
         }
 
-        $user = User::with(['role', 'activeMart'])->where('email', $email)->first();
+        $user = User::with(['role', 'activeMart', 'lokasi'])->where('email', $email)->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
             $this->loginSecurity->recordFailedAttempt($email, $ip);

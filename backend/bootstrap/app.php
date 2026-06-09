@@ -34,6 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+    $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated atau token kedaluwarsa.'
+            ], 401);
+        }
+    });
+})
+    ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([

@@ -3,10 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BannerSlider, { BannerItem } from '@/components/common/BannerSlider';
-import { Produk } from '@/components/home/ProductSection';
+import { Produk, Banner } from '@/types';
+
+/** Base URL backend Laravel — hanya untuk foto profil user dari storage */
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
+/**
+ * Resolve URL foto profil user.
+ * Backend bisa return foto_url (full URL) atau foto (path relatif storage).
+ */
+const resolveFotoUrl = (foto?: string, foto_url?: string): string | null => {
+  if (foto_url) return foto_url;
+  if (foto) {
+    if (foto.startsWith('http')) return foto;
+    return `${BACKEND_URL}/storage/${foto}`;
+  }
+  return null;
+};
+
+/**
+ * Konversi Banner (tipe backend) ke BannerItem (tipe BannerSlider).
+ * Diperlukan karena backend pakai image_path, BannerSlider pakai image/image_path.
+ */
+const toBannerItems = (banners: Banner[]): BannerItem[] =>
+  banners.map(b => ({
+    id: b.id,
+    title: b.title,
+    image_path: b.image_path,   // BannerSlider.tsx sudah support image_path
+    redirect_url: b.redirect_url,
+  }));
 
 interface MainFeaturesProps {
-  banners?: BannerItem[];
+  /** Terima Banner[] dari backend ATAU BannerItem[] dari mock */
+  banners?: Banner[] | BannerItem[];
   latestProducts?: Produk[];
 }
 
@@ -19,8 +48,42 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
     scrollRef.current?.scrollBy({ left: dir === 'left' ? -320 : 320, behavior: 'smooth' });
   }, []);
 
+  // ── Resolve data user ──────────────────────────────────────────────────
+  // Gedung: dari relasi lokasi (user.lokasi.nama_gedung)
+  const namaGedung = user?.lokasi?.nama_gedung ?? user?.lokasi?.nama_lokasi ?? null;
+  const nomorKamar = user?.nomor_kamar ?? null;
+
+  // Foto profil: foto_url (full URL dari backend) atau foto (path relatif)
+  const fotoUrl = resolveFotoUrl(user?.foto, user?.foto_url);
+
+  // Inisial nama untuk avatar fallback
+  const inisialNama = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
+  // ── Normalize banners ke BannerItem[] ─────────────────────────────────
+  // Jika array pertama punya `image_path` dan tidak punya `image` = tipe Banner dari backend
+  const normalizedBanners: BannerItem[] =
+    banners.length > 0 && 'image_path' in banners[0] && !('image' in banners[0])
+      ? toBannerItems(banners as Banner[])
+      : (banners as BannerItem[]);
+
+  // ── Resolve gambar produk ──────────────────────────────────────────────
+  // Prioritas: gambar_url (sudah full URL dari mock/backend)
+  // Fallback: gambar (path relatif, coba dari /produk_assets/)
+  const resolveGambarUrl = (p: Produk): string => {
+    if (p.gambar_url) return p.gambar_url;
+    if (p.gambar) {
+      if (p.gambar.startsWith('http')) return p.gambar;
+      // Ambil nama file saja, serve dari public/produk_assets/
+      const filename = p.gambar.split('/').pop() ?? p.gambar;
+      return `/produk_assets/${filename}`;
+    }
+    return '';
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-0">
       {/* ── OUTER CARD ── */}
       <div className="bg-white rounded-[1.5rem] shadow-2xl shadow-red-900/5 border border-[#E7BD8A]/20 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
@@ -30,36 +93,61 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
             <div>
               {/* Welcome */}
               <div className="relative mb-1">
-                <h2 className="text-2xl font-black text-[#5B000B] leading-tight tracking-tight">
-                  Selamat datang,
-                  <br />
-                  <span className="relative inline-block">
-                    <span className="relative z-10 text-[#dc2626]">
+
+                {/* Foto Profil + Nama */}
+                <div className="flex items-center gap-3 mb-3">
+                  {/* Avatar */}
+                  <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden border-2 border-[#dc2626]/30 shadow-md bg-[#dc2626] flex items-center justify-center">
+                    {fotoUrl ? (
+                      <img
+                        src={fotoUrl}
+                        alt={user?.name ?? 'Foto profil'}
+                        className="w-full h-full object-cover"
+                        onError={e => {
+                          // Sembunyikan img dan tampilkan fallback inisial
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLImageElement).parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<span class="text-white font-black text-sm">${inisialNama}</span>`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span className="text-white font-black text-sm">{inisialNama}</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
+                      Selamat datang,
+                    </p>
+                    <h2 className="text-2xl font-black text-[#dc2626] leading-tight tracking-tight">
                       {user?.name ?? 'Pengguna'}
-                    </span>
-                    <span className="absolute bottom-1 left-0 w-full h-2 bg-[#fecaca] -z-0 rounded-sm" />
-                  </span>
-                </h2>
+                    </h2>
+                  </div>
+                </div>
 
                 {/* Badges Gedung & Kamar */}
-                <div className="mt-4 flex items-center gap-2 text-xs font-bold">
+                <div className="mt-2 flex items-center gap-2 text-xs font-bold flex-wrap">
+                  {/* Badge Gedung */}
                   <div className="badge-history-style flex items-center gap-2 px-3 py-1.5 rounded-xl">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m-5 0v-2a2 2 0 012-2h10a2 2 0 012 2v2M7 5h10" />
                     </svg>
                     <span className="text-[10px] leading-tight font-bold tracking-wider">
-                      {(user as any)?.alamat_gedung ?? 'Gedung -'}
+                      {namaGedung ?? 'Gedung -'}
                     </span>
                   </div>
 
+                  {/* Badge Kamar */}
                   <div className="badge-history-style flex items-center gap-2 px-3 py-1.5 rounded-xl">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
                         d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                     <span className="text-[10px] leading-tight font-bold tracking-wider">
-                      Kamar {(user as any)?.nomor_kamar ?? '-'}
+                      {nomorKamar ? `Kamar ${nomorKamar}` : 'Kamar -'}
                     </span>
                   </div>
                 </div>
@@ -134,14 +222,14 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
               </div>
 
               {/* Trust tagline */}
-              <div className="mt-4 pt-3 border-t border-gray-100/60 hidden lg:block">
+              <div className="mt-4 pt-22 border-t border-gray-100/60 hidden lg:block">
                 <div className="flex items-center gap-2 opacity-60">
                   <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
                     <svg className="w-4 h-4 text-[#5B000B]" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-1-7.5l2.5-2.5 1.5 1.5-4 4-2.5-2.5 1.5-1.5 1 1z" />
                     </svg>
                   </div>
-                  <p className="text-[10px] font-medium text-gray-500 leading-snug">
+                  <p className="text-[11px] font-medium text-gray-800 leading-snug">
                     Layanan terpercaya untuk kebutuhan asrama Anda.
                   </p>
                 </div>
@@ -153,8 +241,8 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
           <div className="lg:col-span-8 bg-white flex flex-col">
 
             {/* Banner */}
-            <div className="relative overflow-hidden border border-[#dc2626]">
-              <BannerSlider banners={banners} compact />
+            <div className="relative overflow-hidden border-b border-[#dc2626]/10">
+              <BannerSlider banners={normalizedBanners} compact />
             </div>
 
             {/* Katalog Produk Terbaru */}
@@ -186,50 +274,62 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
                   ref={scrollRef}
                   className="flex gap-5 overflow-x-auto pb-3 -mx-2 px-2 snap-x snap-mandatory scroll-smooth product-scrollbar"
                 >
-                  {latestProducts.map(product => (
-                    <div
-                      key={product.id}
-                      className="relative pt-2 snap-start shrink-0 w-[160px]"
-                      style={{ perspective: '1000px' }}
-                    >
-                      <button
-                        onClick={() => navigate(`/produk/${product.id}`)}
-                        className="group/item block w-full relative aspect-square rounded-[1.2rem] overflow-hidden border-2 border-red-50 bg-white shadow-sm hover:shadow-2xl hover:border-red-500 transition-all duration-500 transform hover:-translate-y-1"
-                      >
-                        {/* Product Image */}
-                        <img
-                          src={product.gambar_url || ''}
-                          alt={product.nama_produk}
-                          className="w-full h-full object-cover transition-transform duration-1000 group-hover/item:scale-110 group-hover/item:rotate-2"
-                          onError={e => {
-                            (e.target as HTMLImageElement).src =
-                              'https://images.unsplash.com/photo-1599599810694-e1b42fc85b72?w=400&q=80';
-                          }}
-                        />
+                  {latestProducts.length === 0 ? (
+                    // Skeleton loading jika produk belum ada
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="snap-start shrink-0 w-[160px]">
+                        <div className="aspect-square rounded-[1.2rem] bg-gray-100 animate-pulse" />
+                      </div>
+                    ))
+                  ) : (
+                    latestProducts.map(product => {
+                      const gambar = resolveGambarUrl(product);
+                      return (
+                        <div
+                          key={product.id}
+                          className="relative pt-2 snap-start shrink-0 w-[160px]"
+                          style={{ perspective: '1000px' }}
+                        >
+                          <button
+                            onClick={() => navigate(`/produk/${product.id}`)}
+                            className="group/item block w-full relative aspect-square rounded-[1.2rem] overflow-hidden border-2 border-red-50 bg-white shadow-sm hover:shadow-2xl hover:border-red-500 transition-all duration-500 transform hover:-translate-y-1"
+                          >
+                            {/* Product Image */}
+                            <img
+                              src={gambar || 'https://images.unsplash.com/photo-1599599810694-e1b42fc85b72?w=400&q=80'}
+                              alt={product.nama_produk}
+                              className="w-full h-full object-cover transition-transform duration-1000 group-hover/item:scale-110 group-hover/item:rotate-2"
+                              onError={e => {
+                                (e.target as HTMLImageElement).src =
+                                  'https://images.unsplash.com/photo-1599599810694-e1b42fc85b72?w=400&q=80';
+                              }}
+                            />
 
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#dc2626] via-[#dc2626]/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
-                          <p className="text-white font-bold text-[11px] leading-tight translate-y-2 group-hover/item:translate-y-0 transition-transform duration-300 truncate">
-                            {product.nama_produk}
-                          </p>
-                          <span className="text-[9px] text-red-100 font-medium opacity-0 group-hover/item:opacity-100 transition-opacity delay-100">
-                            Klik untuk detail ➔
-                          </span>
-                        </div>
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#dc2626] via-[#dc2626]/20 to-transparent opacity-0 group-hover/item:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
+                              <p className="text-white font-bold text-[11px] leading-tight translate-y-2 group-hover/item:translate-y-0 transition-transform duration-300 truncate">
+                                {product.nama_produk}
+                              </p>
+                              <span className="text-[9px] text-red-100 font-medium opacity-0 group-hover/item:opacity-100 transition-opacity delay-100">
+                                Klik untuk detail ➔
+                              </span>
+                            </div>
 
-                        {/* NEW badge */}
-                        <div className="absolute top-2.5 left-2.5">
-                          <div className="new-badge-pulse bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-lg text-[8px] font-black text-[#dc2626] flex items-center gap-1 shadow-sm border border-red-100">
-                            <span className="relative flex h-1.5 w-1.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600" />
-                            </span>
-                            NEW
-                          </div>
+                            {/* NEW badge */}
+                            <div className="absolute top-2.5 left-2.5">
+                              <div className="new-badge-pulse bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-lg text-[8px] font-black text-[#dc2626] flex items-center gap-1 shadow-sm border border-red-100">
+                                <span className="relative flex h-1.5 w-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600" />
+                                </span>
+                                NEW
+                              </div>
+                            </div>
+                          </button>
                         </div>
-                      </button>
-                    </div>
-                  ))}
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
