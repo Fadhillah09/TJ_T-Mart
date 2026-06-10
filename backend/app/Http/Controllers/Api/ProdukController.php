@@ -22,21 +22,6 @@ class ProdukController extends Controller
         private readonly FileUploadService $fileUploadService
     ) {}
 
-    /**
-     * @OA\Get(
-     *     path="/produk",
-     *     tags={"Produk","Public"},
-     *     summary="List active products with filters",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(name="kategori_id", in="query", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="search", in="query", description="Search by product name", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="mart_id", in="query", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="page", in="query", @OA\Schema(type="integer", default=1)),
-     *
-     *     @OA\Response(response=200, description="Paginated product list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
-     * )
-     */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user('sanctum');
@@ -59,7 +44,6 @@ class ProdukController extends Controller
 
         $produk->getCollection()->transform(function (Produk $item) use ($wishlistedIds) {
             $item->is_wishlisted = $wishlistedIds->has($item->id);
-
             return $item;
         });
 
@@ -69,19 +53,6 @@ class ProdukController extends Controller
         );
     }
 
-    /**
-     * @OA\Get(
-     *     path="/produk/{id}",
-     *     tags={"Produk","Public"},
-     *     summary="Get product detail",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *
-     *     @OA\Response(response=200, description="Product detail", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
-     *     @OA\Response(response=404, description="Product not found")
-     * )
-     */
     public function show(Request $request, string $id): JsonResponse
     {
         $produk = Produk::query()
@@ -107,16 +78,6 @@ class ProdukController extends Controller
         return $this->success(ProdukResource::make($produk), 'Detail produk berhasil diambil');
     }
 
-    /**
-     * @OA\Get(
-     *     path="/admin/produk",
-     *     tags={"Admin","Produk"},
-     *     summary="Admin: list all products",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Response(response=200, description="Admin product list", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
-     * )
-     */
     public function adminIndex(Request $request): JsonResponse
     {
         $this->authorize('create', Produk::class);
@@ -134,35 +95,6 @@ class ProdukController extends Controller
         );
     }
 
-    /**
-     * @OA\Post(
-     *     path="/admin/produk",
-     *     tags={"Admin","Produk"},
-     *     summary="Admin: create product",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *
-     *             @OA\Schema(
-     *                 required={"nama_produk","kategori_id","harga","stok"},
-     *
-     *                 @OA\Property(property="nama_produk", type="string"),
-     *                 @OA\Property(property="kategori_id", type="integer"),
-     *                 @OA\Property(property="harga", type="number"),
-     *                 @OA\Property(property="stok", type="integer"),
-     *                 @OA\Property(property="deskripsi", type="string"),
-     *                 @OA\Property(property="gambar", type="string", format="binary")
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=201, description="Product created", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse"))
-     * )
-     */
     public function store(StoreProdukRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -182,17 +114,17 @@ class ProdukController extends Controller
                 $produk = Produk::create([
                     'nama_produk' => $validated['nama_produk'],
                     'kategori_id' => $validated['kategori_id'],
-                    'harga' => $validated['harga'],
-                    'stok' => $validated['stok'],
-                    'deskripsi' => $validated['deskripsi'] ?? null,
-                    'gambar' => $gambarPath,
-                    'is_active' => true,
+                    'harga'       => $validated['harga'],
+                    'stok'        => $validated['stok'],
+                    'deskripsi'   => $validated['deskripsi'] ?? null,
+                    'gambar'      => $gambarPath,
+                    'is_active'   => true,
                 ]);
 
                 ProdukMart::create([
-                    'produk_id' => $produk->id,
-                    'mart_id' => $martId,
-                    'stok_lokal' => $validated['stok'],
+                    'produk_id'   => $produk->id,
+                    'mart_id'     => $martId,
+                    'stok_lokal'  => $validated['stok'],
                     'harga_lokal' => $validated['harga'],
                 ]);
 
@@ -207,40 +139,6 @@ class ProdukController extends Controller
         return $this->success(ProdukResource::make($produk), 'Produk berhasil ditambahkan', 201);
     }
 
-    /**
-     * @OA\Put(
-     *     path="/admin/produk/{id}",
-     *     tags={"Admin","Produk"},
-     *     summary="Admin: update product",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *
-     *             @OA\Schema(
-     *
-     *                 @OA\Property(property="nama_produk", type="string"),
-     *                 @OA\Property(property="kategori_id", type="integer"),
-     *                 @OA\Property(property="harga", type="number"),
-     *                 @OA\Property(property="stok", type="integer"),
-     *                 @OA\Property(property="deskripsi", type="string"),
-     *                 @OA\Property(property="gambar", type="string", format="binary")
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=200, description="Product updated", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
-     *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Forbidden"),
-     *     @OA\Response(response=404, description="Product not found"),
-     *     @OA\Response(response=422, description="Validation error")
-     * )
-     */
     public function update(UpdateProdukRequest $request, string $id): JsonResponse
     {
         $produk = Produk::find($id);
@@ -270,21 +168,54 @@ class ProdukController extends Controller
         );
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/admin/produk/{id}",
-     *     tags={"Admin","Produk"},
-     *     summary="Admin: soft delete product",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *
-     *     @OA\Response(response=200, description="Product deleted", @OA\JsonContent(ref="#/components/schemas/ApiSuccessResponse")),
-     *     @OA\Response(response=401, description="Unauthenticated"),
-     *     @OA\Response(response=403, description="Forbidden"),
-     *     @OA\Response(response=404, description="Product not found")
-     * )
-     */
+   public function storeRating(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'rating'   => 'nullable|integer|min:1|max:5',
+            'komentar' => 'nullable|string|max:1000',
+        ]);
+
+        $produk = Produk::find($id);
+        if (! $produk) {
+            return $this->error('Produk tidak ditemukan.', null, 404);
+        }
+
+        // FIX: Gunakan guard 'sanctum' secara eksplisit agar objek user tidak null
+        $user = $request->user('sanctum');
+        
+        if (! $user) {
+            return $this->error('Anda harus login terlebih dahulu.', null, 401);
+        }
+
+        $rating   = $request->input('rating');
+        $komentar = $request->input('komentar');
+
+        if (is_null($rating) && (is_null($komentar) || trim($komentar) === '')) {
+            return $this->error('Rating atau komentar harus diisi.', null, 422);
+        }
+
+        if (! is_null($rating)) {
+            $sudahRating = $produk->reviews()
+                ->where('user_id', $user->id)
+                ->whereNotNull('rating')
+                ->exists();
+
+            if ($sudahRating) {
+                return $this->error('Anda sudah memberikan rating untuk produk ini.', null, 422);
+            }
+        }
+
+        $review = $produk->reviews()->create([
+            'user_id'  => $user->id,
+            'rating'   => $rating,
+            'komentar' => $komentar,
+        ]);
+
+        return $this->success(
+            $review,
+            is_null($rating) ? 'Komentar berhasil dikirim.' : 'Rating berhasil disimpan.'
+        );
+    }
     public function destroy(Request $request, string $id): JsonResponse
     {
         $produk = Produk::find($id);

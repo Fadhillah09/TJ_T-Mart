@@ -58,7 +58,7 @@ function MartAvailability({ produkMarts }: { produkMarts?: any[] }) {
 }
 
 /* ── Komponen Kartu Produk ───────────────────────────────────────────────── */
-function ProductItem({
+export function ProductItem({
   produk,
   wishlistedIds,
   onAddToCart,
@@ -150,13 +150,6 @@ function ProductItem({
 
         {/* ── Ketersediaan Mart ── */}
         <MartAvailability produkMarts={produk.produk_marts} />
-
-        {/* Rating */}
-        {produk.avg_rating && (
-          <div className="mt-2 text-xs text-yellow-600 font-medium">
-            ⭐ {produk.avg_rating}
-          </div>
-        )}
       </button>
 
       {/* ── Action Buttons (muncul saat hover) ── */}

@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MasterKamarController;
 
-
 Route::middleware('throttle:auth')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
@@ -25,11 +24,21 @@ Route::middleware('throttle:auth')->group(function () {
 Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
 Route::get('/kamar', [MasterKamarController::class, 'index']);
 
-
 Route::get('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:auth'])
     ->name('verification.verify');
 
+// ── Publik (tanpa login) ──────────────────────────────────────────────────
+Route::middleware('throttle:public')->group(function () {
+    Route::get('/mart', [MartController::class, 'index']);
+    Route::get('/mart/{id}', [MartController::class, 'show']);
+    Route::get('/produk', [ProdukController::class, 'index']);
+    Route::get('/produk/{id}', [ProdukController::class, 'show']);
+    Route::get('/kategori', [KategoriProdukController::class, 'index']);
+    Route::get('/banner', [BannerController::class, 'index']);
+});
+
+// ── Auth only ─────────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);
@@ -39,14 +48,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
-    Route::middleware('throttle:public')->group(function () {
-        Route::get('/mart', [MartController::class, 'index']);
-        Route::get('/mart/{id}', [MartController::class, 'show']);
-        Route::get('/produk', [ProdukController::class, 'index']);
-        Route::get('/produk/{id}', [ProdukController::class, 'show']);
-        Route::get('/kategori', [KategoriProdukController::class, 'index']);
-        Route::get('/banner', [BannerController::class, 'index']);
-    });
+    Route::post('/produk/{id}/rating', [ProdukController::class, 'storeRating']);
+    Route::post('/produk/{id}/komentar', [ProdukController::class, 'storeKomentar']);
 
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);

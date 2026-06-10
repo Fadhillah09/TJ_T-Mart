@@ -34,16 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-    $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
-        if ($request->is('api/*')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated atau token kedaluwarsa.'
-            ], 401);
-        }
-    });
-})
-    ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -65,17 +55,15 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthenticated.',
-                    'errors' => (object) [],
-                ], 401);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+                'errors' => (object) [],
+            ], 401);
         });
 
         $exceptions->render(function (\Throwable $e, Request $request) {
-            if (! $request->is('api/*') || config('app.debug')) {
+            if (! $request->is('api/*')) {
                 return null;
             }
 

@@ -12,7 +12,7 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({
   produk,
-  wishlistedIds,
+  wishlistedIds = new Set(),
   onAddToCart,
   onToggleWishlist,
   isAdding,

@@ -11,6 +11,7 @@ import GalonPage from "@/pages/customer/galon/GalonPage";
 import TokenPage from "@/pages/customer/token/TokenPage";
 import TokenResult from "@/components/token/TokenResult";
 import TokenHistory from "@/components/token/TokenHistory";
+import ProdukDetail from "./pages/customer/ProdukDetail";
 
 function App() {
   return (
@@ -86,6 +87,7 @@ function App() {
             </ErrorBoundary>
           }
         />
+        <Route path="/produk/:id" element={<ProdukDetail />} />
       </Routes>
     </Router>
   );
