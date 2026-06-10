@@ -12,6 +12,17 @@ interface HeaderProps {
   isUser?: boolean;
 }
 
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
+const resolveFotoUrl = (foto?: string, foto_url?: string): string | null => {
+  if (foto_url) return foto_url;
+  if (foto) {
+    if (foto.startsWith('http')) return foto;
+    return `${BACKEND_URL}/storage/${foto}`;
+  }
+  return null;
+};
+
 export default function Header({ isUser = true }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -21,7 +32,10 @@ export default function Header({ isUser = true }: HeaderProps) {
   const { unreadCount } = useNotifStore();
   const { logout } = useAuth();
 
-  const userPhoto = user?.foto || (user as any)?.foto_url;
+  const userPhoto = resolveFotoUrl(user?.foto, user?.foto_url);
+  const inisialNama = user?.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-white border-b border-[#930014]/20 shadow-sm">
@@ -117,11 +131,21 @@ export default function Header({ isUser = true }: HeaderProps) {
                   <span className="text-sm font-bold tracking-tight">{user.name}</span>
                   <div className="relative shrink-0 w-8 h-8 rounded-full overflow-hidden bg-[#fee2e2] text-[#930014] flex items-center justify-center border border-[#930014]/10">
                     {userPhoto ? (
-                      <img src={userPhoto} className="w-full h-full object-cover" alt="Profile"
-                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <img
+                        src={userPhoto}
+                        className="w-full h-full object-cover"
+                        alt="Profile"
+                        onError={e => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLImageElement).parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<span class="text-xs font-bold uppercase text-[#930014]">${inisialNama}</span>`;
+                          }
+                        }}
+                      />
                     ) : (
-                      <span className="text-xs font-bold uppercase">
-                        {user.name ? user.name.substring(0, 2) : '?'}
+                      <span className="text-xs font-bold uppercase text-[#930014]">
+                        {inisialNama}
                       </span>
                     )}
                   </div>

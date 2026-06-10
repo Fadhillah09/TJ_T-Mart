@@ -1,18 +1,14 @@
 import { useState } from "react"
+import { Mart } from "@/types"
+import { useMartStore } from "@/store/martStore"
+import MartPickerModal from "@/components/home/MartPickerModal"
+import { MOCK_PRODUK } from "@/data/mockHome"
 // @ts-ignore
 import '@styles/sub-header.css';
 
-interface Mart {
-  id: number
-  nama_mart: string
-}
-
-interface SubHeaderProps {
-  activeMart?: Mart | null
-}
-
-export default function SubHeader({ activeMart }: SubHeaderProps) {
+export default function SubHeader() {
   const [openMart, setOpenMart] = useState(false)
+  const { activeMart, setActiveMart } = useMartStore()
 
   const links = [
     { name: "Beranda", url: "/", mobileHidden: false },
@@ -20,6 +16,12 @@ export default function SubHeader({ activeMart }: SubHeaderProps) {
     { name: "Kontak", url: "/kontak", mobileHidden: true },
     { name: "Tentang Kami", url: "/tentang-kami", mobileHidden: true },
   ]
+
+  const MARTS: Mart[] = [
+    { id: 1, nama_mart: 'TJ Mart Putra', alamat: '', status: '', is_active: true },
+    { id: 2, nama_mart: 'T Mart Putra', alamat: '', status: '', is_active: true },
+    { id: 3, nama_mart: 'TJ Mart Putri', alamat: '', status: '', is_active: true },
+  ];
 
   return (
     <div className="fixed top-[80px] z-40 w-full bg-sub-header text-white shadow-[0_4px_20px_rgba(0,0,0,0.3)] border-b border-[#E7BD8A]/30">
@@ -73,8 +75,13 @@ export default function SubHeader({ activeMart }: SubHeaderProps) {
       </div>
 
       {openMart && (
-        <div>
-        </div>
+        <MartPickerModal
+          marts={MARTS}
+          activeMartId={activeMart?.id ?? null}
+          onSelect={(mart) => setActiveMart(mart)}
+          onClose={() => setOpenMart(false)}
+          totalProduk={MOCK_PRODUK.length}
+        />
       )}
     </div>
   )

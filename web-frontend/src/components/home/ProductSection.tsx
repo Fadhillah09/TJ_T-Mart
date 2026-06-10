@@ -217,20 +217,6 @@ export function ProductCategorySection({
         </button>
       </div>
 
-      <div className="relative group/scroll">
-        <button
-          onClick={() => scroll("left")}
-          className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg border border-red-100 p-1.5 rounded-full text-[#d50d27] hover:bg-[#d50d27] hover:text-white transition opacity-0 group-hover/scroll:opacity-100 items-center justify-center"
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <button
-          onClick={() => scroll("right")}
-          className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg border border-red-100 p-1.5 rounded-full text-[#d50d27] hover:bg-[#d50d27] hover:text-white transition opacity-0 group-hover/scroll:opacity-100 items-center justify-center"
-        >
-          <ChevronRight size={18} />
-        </button>
-
         <div
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
@@ -246,7 +232,6 @@ export function ProductCategorySection({
             />
           ))}
         </div>
-      </div>
     </section>
   );
 }

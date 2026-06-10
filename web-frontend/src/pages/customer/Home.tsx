@@ -7,13 +7,15 @@ import Footer from '@/components/layout/Footer';
 import MainFeatures from '@/components/home/MainFeatures';
 import { ProductCategorySection, ProductLoadingSkeleton } from '@/components/home/ProductSection';
 import { Produk, KategoriProduk } from '@/types';
-import { MOCK_PRODUK, MOCK_KATEGORI, MOCK_BANNERS, MOCK_LATEST_PRODUCTS } from '@/data/mockHome';
+import { MOCK_PRODUK, MOCK_KATEGORI, MOCK_BANNERS } from '@/data/mockHome';
+import { useMartStore } from '@/store/martStore';
 
 const INITIAL_SHOW = 3;
 
 const Home = () => {
   const navigate = useNavigate();
   const { addToCart } = useCartStore() as any;
+  const { activeMart } = useMartStore();
 
   const [wishlistedIds, setWishlistedIds] = useState<Set<number>>(new Set());
   const [isLoading] = useState(false);
@@ -35,13 +37,25 @@ const Home = () => {
     navigate(`/produk?kategori=${kategoriId}`);
   };
 
-  const kategoriProduk: (KategoriProduk & { produk: Produk[]; slug?: string })[] =
-    MOCK_KATEGORI.map(kat => ({
+  // Filter products by active mart availability
+  const kategoriProduk = MOCK_KATEGORI.map(kat => {
+    const filtered = MOCK_PRODUK.filter(p => {
+      const matchKategori = p.kategori_id === kat.id;
+      const matchMart = !activeMart || p.produk_marts?.some((pm: any) => pm.mart_id === activeMart.id);
+      return matchKategori && matchMart;
+    });
+
+    return {
       ...kat,
-      produk: MOCK_PRODUK.filter(p => p.kategori_id === kat.id),
-    }));
+      produk: filtered,
+    };
+  }).filter(kat => kat.produk.length > 0);
 
   const visibleKategori = showAll ? kategoriProduk : kategoriProduk.slice(0, INITIAL_SHOW);
+
+  const filteredLatestProducts = MOCK_PRODUK
+    .filter(p => !activeMart || p.produk_marts?.some((pm: any) => pm.mart_id === activeMart.id))
+    .slice(0, 8);
 
   return (
     <>
@@ -51,7 +65,7 @@ const Home = () => {
       <div className="pt-32 pb-24 bg-white min-h-screen">
         <MainFeatures
           banners={MOCK_BANNERS}
-          latestProducts={MOCK_LATEST_PRODUCTS}
+          latestProducts={filteredLatestProducts}
         />
 
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 px-4 mt-2">

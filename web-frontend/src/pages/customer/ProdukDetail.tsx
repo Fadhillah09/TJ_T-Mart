@@ -15,16 +15,19 @@ import { Produk } from "@/types";
 import { MOCK_PRODUK } from '@/data/mockHome';
 import { ProductItem } from "@/components/home/ProductSection";
 
+import { useMartStore } from "@/store/martStore";
+
 const ProdukDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCartStore() as any;
+  const { activeMart } = useMartStore();
 
   const { data: produkRes, isLoading } = useProdukDetail(Number(id));
   const produk = produkRes?.data as any;
 
   const rekomendasi: Produk[] = MOCK_PRODUK
-  .filter(p => p.kategori_id === produk?.kategori_id && p.id !== Number(id))
+  .filter(p => p.kategori_id === produk?.kategori_id && p.id !== Number(id) && (!activeMart || p.produk_marts?.some((pm: any) => pm.mart_id === activeMart.id)))
   .slice(0, 8);
 
   const fotoUtama: string = produk?.gambar_url || "";
