@@ -5,6 +5,7 @@ import { useNotifStore } from "@/store/notifStore";
 import { User } from "@/types/index";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import { useWishlistStore } from "@/store/wishlistStore";
 // @ts-ignore
 import "@styles/header.css";
 
@@ -36,6 +37,9 @@ export default function Header({ isUser = true }: HeaderProps) {
   const inisialNama = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
+
+  const { wishlistedIds } = useWishlistStore();
+  const wishlistCount = wishlistedIds.length;
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-white border-b border-[#930014]/20 shadow-sm">
@@ -85,6 +89,11 @@ export default function Header({ isUser = true }: HeaderProps) {
                   <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
+                  {wishlistCount > 0 && (
+                    <span className="animate-badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full ring-1 ring-white">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
                 </Link>
 
                 <Link
@@ -95,11 +104,9 @@ export default function Header({ isUser = true }: HeaderProps) {
                   <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  {totalItems > 0 && (
-                    <span className="nav-badge absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-[#5B000B] text-white text-[10px] font-semibold rounded-full ring-2 ring-white">
-                      {totalItems > 99 ? '99+' : totalItems}
-                    </span>
-                  )}
+                  <span className="animate-badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full ring-1 ring-white">
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
                 </Link>
 
                 <Link

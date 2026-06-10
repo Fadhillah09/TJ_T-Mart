@@ -55,6 +55,12 @@ class WishlistController extends Controller
         $wishlist = Wishlist::where('user_id', $request->user()->id)->find($id);
 
         if (! $wishlist) {
+            $wishlist = Wishlist::where('user_id', $request->user()->id)
+                ->where('produk_id', $id)
+                ->first();
+        }
+
+        if (! $wishlist) {
             return $this->error('Wishlist tidak ditemukan.', null, 404);
         }
 

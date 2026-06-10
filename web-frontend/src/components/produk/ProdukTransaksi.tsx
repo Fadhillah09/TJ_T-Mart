@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCartStore } from '@/store/cartStore';
+import { useCart } from '@/hooks/useCart';
+import { useWishlistStore } from '@/store/wishlistStore';
 import { currency } from '@/utils/produkUtils';
 import api from '@/api/axiosConfig';
 
@@ -10,11 +11,11 @@ interface Props {
 
 const ProdukTransaksi = ({ produk }: Props) => {
   const navigate = useNavigate();
-  const { addToCart } = useCartStore() as any;
+  const { addToCart } = useCart();
+  const { wishlistedIds, toggleWishlist } = useWishlistStore();
 
   const [qty, setQty] = useState(1);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const [wishlistDone, setWishlistDone] = useState(false);
 
   const hargaAsli: number = produk?.harga ?? 0;
   const hargaDiskon = produk?.persentase_diskon
@@ -23,15 +24,21 @@ const ProdukTransaksi = ({ produk }: Props) => {
   const hargaTampil = hargaDiskon ?? hargaAsli;
   const subtotal = hargaTampil * qty;
 
+  const isWishlisted = wishlistedIds.includes(produk?.id);
+
   const handleWishlist = async () => {
-    if (wishlistLoading) return;
+    if (wishlistLoading || !produk?.id) return;
+    toggleWishlist(produk.id);
     setWishlistLoading(true);
     try {
-      await api.post('/wishlist', { produk_id: produk?.id });
-      setWishlistDone(true);
-      setTimeout(() => setWishlistDone(false), 2500);
+      if (isWishlisted) {
+        await api.delete(`/wishlist/${produk.id}`);
+      } else {
+        await api.post('/wishlist', { produk_id: produk.id });
+      }
     } catch {
-      // silent
+      // Revert if failed
+      toggleWishlist(produk.id);
     } finally {
       setWishlistLoading(false);
     }
@@ -79,17 +86,17 @@ const ProdukTransaksi = ({ produk }: Props) => {
           onClick={handleWishlist}
           disabled={wishlistLoading}
           className={`w-10 h-10 border-2 rounded-xl flex items-center justify-center transition-all active:scale-90 flex-shrink-0 ${
-            wishlistDone
+            isWishlisted
               ? 'bg-red-50 border-[#dc2626] text-[#dc2626]'
               : 'bg-white border-[#dc2626] text-[#dc2626] hover:bg-red-50'
           }`}
         >
-          <svg className="w-4 h-4" fill={wishlistDone ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
           </svg>
         </button>
         <button
-          onClick={() => addToCart({ ...produk, quantity: qty })}
+          onClick={() => addToCart({ produkId: produk.id, quantity: qty })}
           className="flex-1 font-black py-2.5 bg-white border-2 border-[#dc2626] rounded-xl flex items-center justify-center text-[#dc2626] hover:bg-red-50 transition-all gap-1.5 text-xs active:scale-95"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

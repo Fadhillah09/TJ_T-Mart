@@ -401,3 +401,47 @@ textarea:disabled {
 .status-info {
   @apply text-blue-600 bg-blue-50;
 }
+
+/* ===== BADGE PULSE DIM ANIMATION ===== */
+@keyframes badge-pulse-dim {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1.08);
+    filter: brightness(1.1);
+    box-shadow: 0 0 8px 3px rgba(147, 0, 20, 0.6);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.92);
+    filter: brightness(0.85);
+    box-shadow: 0 0 0 0 rgba(147, 0, 20, 0);
+  }
+}
+.animate-badge-pulse {
+  animation: badge-pulse-dim 1.5s infinite ease-in-out;
+}
+
+/* ===== BUTTON KATEGORI ANIMATED ===== */
+@keyframes gradientAnimation {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.btn-kategori-animated {
+  background: linear-gradient(135deg, #5B000B, #dc2626, #b91c1c, #5B000B);
+  background-size: 300% 300%;
+  animation: gradientAnimation 8s ease infinite;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 15px rgba(213, 13, 39, 0.4);
+}
+
+.btn-kategori-animated:hover {
+  box-shadow: 0 6px 25px rgba(213, 13, 39, 0.6);
+  filter: brightness(1.1);
+}
+
+.btn-kategori-animated:active {
+  transform: scale(0.96);
+  filter: brightness(1.2);
+}

@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useProdukDetail, useProdukList } from "@/hooks/useProduk";
-import { useCartStore } from "@/store/cartStore";
+import { useCart } from "@/hooks/useCart";
 import Header from "@/components/layout/Header";
 import SubHeader from "@/components/layout/SubHeader";
 import Footer from "@/components/layout/Footer";
@@ -16,12 +16,16 @@ import { MOCK_PRODUK } from '@/data/mockHome';
 import { ProductItem } from "@/components/home/ProductSection";
 
 import { useMartStore } from "@/store/martStore";
+import { useWishlistStore } from "@/store/wishlistStore";
+import api from '@/api/axiosConfig';
 
 const ProdukDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart } = useCartStore() as any;
+  const { addToCart } = useCart();
   const { activeMart } = useMartStore();
+  const { wishlistedIds, toggleWishlist } = useWishlistStore();
+  const wishlistedSet = new Set(wishlistedIds);
 
   const { data: produkRes, isLoading } = useProdukDetail(Number(id));
   const produk = produkRes?.data as any;
@@ -267,11 +271,23 @@ const ProdukDetail = () => {
                   <ProductItem
                     key={p.id}
                     produk={p}
-                    wishlistedIds={new Set()}
+                    wishlistedIds={wishlistedSet}
                     onAddToCart={(prod) => {
-                      addToCart({ ...prod, quantity: 1 });
+                      addToCart({ produkId: prod.id, quantity: 1 });
                     }}
-                    onToggleWishlist={() => {}}
+                    onToggleWishlist={async (prod) => {
+                      const isWishlisted = wishlistedIds.includes(prod.id);
+                      toggleWishlist(prod.id);
+                      try {
+                        if (isWishlisted) {
+                          await api.delete(`/wishlist/${prod.id}`);
+                        } else {
+                          await api.post('/wishlist', { produk_id: prod.id });
+                        }
+                      } catch (err) {
+                        toggleWishlist(prod.id);
+                      }
+                    }}
                   />
                 ))}
               </div>

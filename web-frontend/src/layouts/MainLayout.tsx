@@ -18,7 +18,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
       
       <Header isUser={isUser} />
       

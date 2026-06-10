@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCartStore } from '@/store/cartStore';
+import { useCart } from '@/hooks/useCart';
 import Header from '@/components/layout/Header';
 import SubHeader from '@/components/layout/SubHeader';
 import Footer from '@/components/layout/Footer';
@@ -9,28 +9,39 @@ import { ProductCategorySection, ProductLoadingSkeleton } from '@/components/hom
 import { Produk, KategoriProduk } from '@/types';
 import { MOCK_PRODUK, MOCK_KATEGORI, MOCK_BANNERS } from '@/data/mockHome';
 import { useMartStore } from '@/store/martStore';
+import { useWishlistStore } from '@/store/wishlistStore';
+import api from '@/api/axiosConfig';
 
 const INITIAL_SHOW = 3;
 
 const Home = () => {
   const navigate = useNavigate();
-  const { addToCart } = useCartStore() as any;
+  const { addToCart } = useCart();
   const { activeMart } = useMartStore();
+  const { wishlistedIds, toggleWishlist } = useWishlistStore();
 
-  const [wishlistedIds, setWishlistedIds] = useState<Set<number>>(new Set());
   const [isLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
+  const wishlistedSet = new Set(wishlistedIds);
+
   const handleAddToCart = (produk: Produk) => {
-    addToCart(produk as any);
+    addToCart({ produkId: produk.id, quantity: 1 });
   };
 
-  const handleToggleWishlist = (produk: Produk) => {
-    setWishlistedIds(prev => {
-      const next = new Set(prev);
-      next.has(produk.id) ? next.delete(produk.id) : next.add(produk.id);
-      return next;
-    });
+  const handleToggleWishlist = async (produk: Produk) => {
+    const isWishlisted = wishlistedIds.includes(produk.id);
+    toggleWishlist(produk.id);
+    try {
+      if (isWishlisted) {
+        await api.delete(`/wishlist/${produk.id}`);
+      } else {
+        await api.post('/wishlist', { produk_id: produk.id });
+      }
+    } catch (err) {
+      // Revert if API request fails
+      toggleWishlist(produk.id);
+    }
   };
 
   const handleViewAll = (kategoriId: number) => {
@@ -80,18 +91,24 @@ const Home = () => {
                 <ProductCategorySection
                   key={kat.id}
                   kat={kat}
-                  wishlistedIds={wishlistedIds}
+                  wishlistedIds={wishlistedSet}
                   onAddToCart={handleAddToCart}
                   onToggleWishlist={handleToggleWishlist}
                   onViewAll={handleViewAll}
                 />
               ))}
-
               {!showAll && kategoriProduk.length > INITIAL_SHOW && (
                 <div className="flex justify-center mt-10">
                   <button
                     onClick={() => setShowAll(true)}
-                    className="px-8 py-3 rounded-xl bg-[#d50d27] text-white font-bold text-sm hover:bg-[#ba0015] transition-all shadow-lg shadow-[#d50d27]/30"
+                    style={{
+                      background: 'linear-gradient(135deg, #5B000B, #dc2626, #b91c1c, #5B000B)',
+                      backgroundSize: '300% 300%',
+                      animation: 'gradientAnimation 8s ease infinite',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      boxShadow: '0 4px 15px rgba(213,13,39,0.4)',
+                    }}
+                    className="px-8 py-3 rounded-xl text-white font-bold text-sm transition-all hover:-translate-y-0.5"
                   >
                     Lihat Semua Kategori ({kategoriProduk.length - INITIAL_SHOW} lainnya)
                   </button>
