@@ -43,7 +43,7 @@ const ProdukDetail = () => {
       <>
         <Header />
         <SubHeader />
-        <div className="pt-[136px] min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="pt-[136px] min-h-screen flex items-center justify-center bg-white">
           <svg
             className="w-8 h-8 animate-spin text-[#dc2626]"
             fill="none"
@@ -67,7 +67,7 @@ const ProdukDetail = () => {
       <>
         <Header />
         <SubHeader />
-        <div className="pt-[136px] min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="pt-[136px] min-h-screen flex items-center justify-center bg-white">
           <p className="text-gray-500 font-bold">Produk tidak ditemukan.</p>
         </div>
         <Footer />
@@ -79,7 +79,7 @@ const ProdukDetail = () => {
       <Header />
       <SubHeader />
 
-      <div className="pt-[136px] pb-24 bg-gray-50 min-h-screen text-xs">
+      <div className="pt-[136px] pb-24 bg-white min-h-screen text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb — Beranda / Nama Produk */}
           <div className="mb-4">

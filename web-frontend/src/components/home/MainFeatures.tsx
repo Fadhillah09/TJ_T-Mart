@@ -1,9 +1,10 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BannerSlider, { BannerItem } from '@/components/common/BannerSlider';
 import { Produk, Banner } from '@/types';
+import toast from 'react-hot-toast';
 
 /** Base URL backend Laravel — hanya untuk foto profil user dari storage */
 const BACKEND_URL = 'http://127.0.0.1:8000';
@@ -43,6 +44,23 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [openAduanModal, setOpenAduanModal] = useState(false);
+  const [tipeAduan, setTipeAduan] = useState('Token Listrik');
+  const [judulAduan, setJudulAduan] = useState('');
+  const [deskripsiAduan, setDeskripsiAduan] = useState('');
+
+  const handleKirimAduan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!judulAduan.trim() || !deskripsiAduan.trim()) {
+      toast.error('Harap isi judul dan deskripsi aduan.');
+      return;
+    }
+    toast.success('Keluhan Anda berhasil dikirim! Tim kami akan segera menindaklanjuti.');
+    setOpenAduanModal(false);
+    setJudulAduan('');
+    setDeskripsiAduan('');
+  };
 
   const scrollProducts = useCallback((dir: 'left' | 'right') => {
     scrollRef.current?.scrollBy({ left: dir === 'left' ? -320 : 320, behavior: 'smooth' });
@@ -221,8 +239,57 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
                 </button>
               </div>
 
+              {/* Layanan Pengaduan */}
+              <h4 className="text-[10px] font-extrabold text-[#dc2626] uppercase tracking-[0.2em] mt-5 mb-2 ml-1">
+                Layanan Pengaduan
+              </h4>
+
+              <div className="flex flex-row gap-2 w-full mb-3">
+                {/* Aduan via WA */}
+                <a
+                  href="https://wa.me/6281234567890?text=Halo%20Admin%20TJ-T%20Mart,%20saya%20ingin%20mengajukan%20keluhan."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="feature-card shining-effect flex-1 group flex items-center gap-2.5 px-3 py-2.5 rounded-2xl bg-white border-2 border-red-300 hover:border-[#dc2626] hover:shadow-xl hover:shadow-red-900/10 transition-all text-left"
+                >
+                  <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[#dc2626] rounded-xl text-white group-hover:bg-[#b91c1c] transition-all duration-300 shadow-md">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#5B000B] text-[11px] group-hover:text-[#dc2626] leading-tight">
+                      Aduan WA
+                    </h3>
+                    <p className="text-[8px] leading-tight text-red-400 font-bold uppercase tracking-tighter mt-0.5">
+                      Chat Admin
+                    </p>
+                  </div>
+                </a>
+
+                {/* Aduan Web */}
+                <button
+                  onClick={() => setOpenAduanModal(true)}
+                  className="feature-card shining-effect flex-1 group flex items-center gap-2.5 px-3 py-2.5 rounded-2xl bg-white border-2 border-red-300 hover:border-[#dc2626] hover:shadow-xl hover:shadow-red-900/10 transition-all text-left cursor-pointer"
+                >
+                  <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-[#dc2626] rounded-xl text-white group-hover:bg-[#b91c1c] transition-all duration-300 shadow-md">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[#5B000B] text-[11px] group-hover:text-[#dc2626] leading-tight">
+                      Aduan Web
+                    </h3>
+                    <p className="text-[8px] leading-tight text-red-400 font-bold uppercase tracking-tighter mt-0.5">
+                      Kirim Langsung
+                    </p>
+                  </div>
+                </button>
+              </div>
+
               {/* Trust tagline */}
-              <div className="mt-4 pt-22 border-t border-gray-100/60 hidden lg:block">
+              <div className="mt-0 pt-0 border-t border-gray-100/60 hidden lg:block">
                 <div className="flex items-center gap-2 opacity-60">
                   <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
                     <svg className="w-4 h-4 text-[#5B000B]" fill="currentColor" viewBox="0 0 20 20">
@@ -336,6 +403,90 @@ export default function MainFeatures({ banners = [], latestProducts = [] }: Main
           </div>
         </div>
       </div>
+
+      {/* ── ADUAN MODAL ── */}
+      {openAduanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpenAduanModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-pop border border-[#E7BD8A]/20">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-[#5B000B] text-base">Buat Pengaduan Web</h3>
+                <p className="text-[10px] text-gray-500 mt-0.5">Kirim keluhan Anda langsung melalui sistem</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenAduanModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-400 hover:text-[#dc2626] transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleKirimAduan} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-gray-700 font-bold text-xs">
+                  Tipe Masalah <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={tipeAduan}
+                  onChange={e => setTipeAduan(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-gray-200 text-xs focus:border-[#dc2626] focus:ring-1 focus:ring-[#dc2626] outline-none bg-white font-medium text-gray-800"
+                >
+                  <option value="Token Listrik">Token Listrik</option>
+                  <option value="Galon Asrama">Galon Asrama</option>
+                  <option value="Fasilitas Kamar">Fasilitas Kamar</option>
+                  <option value="Kebersihan">Kebersihan</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-gray-700 font-bold text-xs">
+                  Judul Keluhan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Token belum masuk ke riwayat"
+                  value={judulAduan}
+                  onChange={e => setJudulAduan(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-gray-200 text-xs focus:border-[#dc2626] focus:ring-1 focus:ring-[#dc2626] outline-none font-medium text-gray-800"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-gray-700 font-bold text-xs">
+                  Deskripsi Keluhan <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="Jelaskan secara detail masalah Anda..."
+                  value={deskripsiAduan}
+                  onChange={e => setDeskripsiAduan(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-gray-200 text-xs focus:border-[#dc2626] focus:ring-1 focus:ring-[#dc2626] outline-none resize-none font-medium text-gray-800"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl font-bold uppercase tracking-wider text-[10px] bg-[#dc2626] hover:bg-[#b91c1c] text-white shadow-md shadow-red-100 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5"
+              >
+                Kirim Keluhan
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── STYLES ── */}
       <style>{`

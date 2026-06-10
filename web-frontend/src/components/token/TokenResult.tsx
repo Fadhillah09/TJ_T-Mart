@@ -40,7 +40,7 @@ const TokenResult = () => {
       <Header />
       <SubHeader />
 
-      <div className="pt-[136px] pb-24 bg-gray-50 min-h-screen">
+      <div className="pt-[136px] pb-24 bg-white min-h-screen">
         <div className="max-w-xl mx-auto px-4">
 
           {/* Breadcrumb */}
@@ -75,8 +75,8 @@ const TokenResult = () => {
               </p>
 
               <div className="mb-8 border-t-2 border-dashed border-[#fca5a5] relative">
-                <span className="absolute -left-10 -top-2.5 w-5 h-5 bg-gray-50 border border-[#fca5a5] rounded-full" />
-                <span className="absolute -right-10 -top-2.5 w-5 h-5 bg-gray-50 border border-[#fca5a5] rounded-full" />
+                <span className="absolute -left-10 -top-2.5 w-5 h-5 bg-white border border-[#fca5a5] rounded-full" />
+                <span className="absolute -right-10 -top-2.5 w-5 h-5 bg-white border border-[#fca5a5] rounded-full" />
               </div>
 
               {/* Box kode token */}

@@ -20,7 +20,7 @@ const TokenHistory = () => {
       <Header />
       <SubHeader />
 
-      <div className="pt-[136px] pb-24 bg-gray-50 min-h-screen">
+      <div className="pt-[136px] pb-24 bg-white min-h-screen">
         <div className="max-w-xl mx-auto px-4">
 
           {/* Breadcrumb + Header */}

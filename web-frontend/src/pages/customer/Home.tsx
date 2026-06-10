@@ -48,7 +48,7 @@ const Home = () => {
       <Header />
       <SubHeader />
 
-      <div className="pt-32 pb-24 bg-gray-50 min-h-screen">
+      <div className="pt-32 pb-24 bg-white min-h-screen">
         <MainFeatures
           banners={MOCK_BANNERS}
           latestProducts={MOCK_LATEST_PRODUCTS}

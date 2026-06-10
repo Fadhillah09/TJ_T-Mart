@@ -35,7 +35,7 @@ const GalonPage = () => {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4 py-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 py-6">
       {/* max-w-xl membuat ukuran container card jauh lebih kecil, pas di tengah monitor */}
       <div className="w-full max-w-xl space-y-4">
         
