@@ -21,16 +21,23 @@ export default function CartPage() {
 
   // Map backend cart items to CartItem format
   const mappedCartItems: CartItem[] = useMemo(() => {
-    return rawCartItems.map((item: any) => ({
-      id: item.id,
-      product_id: item.produk_id,
-      product_name: item.produk?.nama_produk || "",
-      mart_id: activeMart?.id || item.produk?.produk_marts?.[0]?.mart_id || 1,
-      mart_name: activeMart?.nama_mart || item.produk?.produk_marts?.[0]?.mart?.nama_mart || "Mart",
-      qty: item.quantity,
-      price: item.produk?.harga || 0,
-      image_url: resolveGambar(item.produk),
-    }));
+    return rawCartItems.map((item: any) => {
+      const pmList = item.produk?.produk_marts || [];
+      const activePm = activeMart ? pmList.find((pm: any) => pm.mart_id === activeMart.id) : null;
+      const mart = activePm?.mart || pmList[0]?.mart || activeMart || { id: 1, nama_mart: "Mart", alamat: "" };
+      
+      return {
+        id: item.id,
+        product_id: item.produk_id,
+        product_name: item.produk?.nama_produk || "",
+        mart_id: mart.id,
+        mart_name: mart.nama_mart || "Mart",
+        mart_address: mart.alamat || "",
+        qty: item.quantity,
+        price: item.produk?.harga || 0,
+        image_url: resolveGambar(item.produk),
+      };
+    });
   }, [rawCartItems, activeMart]);
 
   const groupedItems = useMemo(() => groupCartByMart(mappedCartItems), [mappedCartItems]);
@@ -101,14 +108,7 @@ export default function CartPage() {
       <Header />
       <SubHeader />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
-        {/* Breadcrumb */}
-        <nav className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-          <span className="hover:text-red-600 cursor-pointer transition-colors" onClick={() => navigate("/")}>Beranda</span>
-          <span className="text-gray-300">/</span>
-          <span className="hover:text-red-600 cursor-pointer transition-colors" onClick={() => navigate("/produk")}>Produk</span>
-          <span className="text-gray-300">/</span>
-          <span className="text-[#5B000B]">Keranjang</span>
-        </nav>
+        {/* Breadcrumb Removed */}
 
         <h1 className="text-2xl font-extrabold text-[#5B000B] mb-6">
           Keranjang Belanja
@@ -117,79 +117,80 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* List items */}
           <div className="lg:col-span-2 space-y-6">
-            {Object.entries(groupedItems).map(([martId, group]) => (
-              <div key={martId} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-[#930014]">
-                    <Store size={18} />
-                  </div>
-                  <h3 className="font-extrabold text-sm text-[#5B000B] uppercase tracking-wide">
-                    {group.martName}
-                  </h3>
-                </div>
-
-                <div className="divide-y divide-gray-100">
-                  {group.items.map((item) => (
-                    <div key={item.id} className="py-4 flex gap-4 items-center first:pt-0 last:pb-0">
-                      <img
-                        src={item.image_url}
-                        alt={item.product_name}
-                        className="w-16 h-16 object-cover rounded-xl border border-gray-100"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/produk_assets/no-image.png";
-                        }}
-                      />
-                      
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-xs text-gray-900 truncate uppercase">
-                          {item.product_name}
-                        </h4>
-                        <p className="text-[10px] font-bold text-gray-400 mt-0.5">
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
+              <div className="divide-y divide-gray-100">
+                {mappedCartItems.map((item) => (
+                  <div key={item.id} className="py-4 flex gap-4 items-center first:pt-0 last:pb-0">
+                    <img
+                      src={item.image_url}
+                      alt={item.product_name}
+                      className="w-16 h-16 object-cover rounded-xl border border-gray-100"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/produk_assets/no-image.png";
+                      }}
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-black text-xs text-gray-900 truncate uppercase">
+                        {item.product_name}
+                      </h4>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <span className="text-[10px] font-bold text-gray-400">
                           {currency(item.price)}
-                        </p>
-                      </div>
-
-                      {/* Quantity & Subtotal Controls */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-8">
-                          <button
-                            type="button"
-                            onClick={() => handleQtyChange(item.id, item.qty, -1)}
-                            className="w-8 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-red-600 transition-colors font-black text-sm"
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <span className="w-8 text-center text-xs font-black text-gray-800">
-                            {item.qty}
+                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          <span className="text-[9px] font-semibold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-md">
+                            {item.mart_name}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleQtyChange(item.id, item.qty, 1)}
-                            className="w-8 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-red-600 transition-colors font-black text-sm"
-                          >
-                            <Plus size={12} />
-                          </button>
+                          {item.mart_address && (
+                            <span className="text-[9px] text-gray-400 font-semibold truncate max-w-[200px]" title={item.mart_address}>
+                              📍 {item.mart_address}
+                            </span>
+                          )}
                         </div>
-
-                        <div className="text-right min-w-[70px]">
-                          <span className="font-black text-xs text-[#dc2626] block">
-                            {currency(item.price * item.qty)}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-600 p-1 transition-colors rounded-lg hover:bg-red-50"
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Quantity & Subtotal Controls */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-8">
+                        <button
+                          type="button"
+                          onClick={() => handleQtyChange(item.id, item.qty, -1)}
+                          className="w-8 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-red-600 transition-colors font-black text-sm"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span className="w-8 text-center text-xs font-black text-gray-800">
+                          {item.qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleQtyChange(item.id, item.qty, 1)}
+                          className="w-8 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-red-600 transition-colors font-black text-sm"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+
+                      <div className="text-right min-w-[70px]">
+                        <span className="font-black text-xs text-[#dc2626] block">
+                          {currency(item.price * item.qty)}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-gray-400 hover:text-red-600 p-1 transition-colors rounded-lg hover:bg-red-50"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
 
           {/* Checkout summary panel */}
@@ -204,15 +205,19 @@ export default function CartPage() {
                   <span>Total Harga Produk</span>
                   <span className="font-black text-gray-800">{currency(cartSubtotal)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span>Biaya Layanan</span>
+                  <span className="font-black text-gray-800">{currency(1000)}</span>
+                </div>
                 <p className="text-[10px] text-gray-400 font-medium leading-normal italic mt-1.5">
-                  * Biaya kirim dan biaya layanan akan ditambahkan saat checkout sesuai metode pengiriman pilihan Anda.
+                  * Biaya kirim akan ditambahkan saat checkout sesuai metode pengiriman pilihan Anda.
                 </p>
               </div>
 
               <div className="flex justify-between items-baseline">
                 <span className="text-xs font-bold text-gray-500 uppercase">Subtotal</span>
                 <span className="text-lg font-black text-[#dc2626]">
-                  {currency(cartSubtotal)}
+                  {currency(cartSubtotal + 1000)}
                 </span>
               </div>
 

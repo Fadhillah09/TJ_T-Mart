@@ -110,7 +110,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = React.memo(({
         </div>
         {totals.ongkos > 0 && (
           <div className="flex justify-between">
-            <span>Ongkos Kirim</span>
+            <span>Ongkos Kirim ({Math.round(totals.ongkos / 5000)} Kurir)</span>
             <span>{formatRupiah(totals.ongkos)}</span>
           </div>
         )}

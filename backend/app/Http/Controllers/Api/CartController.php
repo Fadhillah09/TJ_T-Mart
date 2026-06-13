@@ -29,7 +29,12 @@ class CartController extends Controller
     public function index(Request $request): JsonResponse
     {
         $cart = $this->getOrCreateCart($request->user()->id);
-        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
+        $cart->load([
+            'items.produk' => function ($query) {
+                $query->select('id', 'nama_produk', 'harga', 'gambar', 'is_active');
+            },
+            'items.produk.produkMarts.mart'
+        ]);
 
         return $this->success(CartResource::make($cart), 'Keranjang berhasil diambil');
     }
@@ -86,7 +91,12 @@ class CartController extends Controller
             ]);
         }
 
-        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
+        $cart->load([
+            'items.produk' => function ($query) {
+                $query->select('id', 'nama_produk', 'harga', 'gambar', 'is_active');
+            },
+            'items.produk.produkMarts.mart'
+        ]);
 
         return $this->success(CartResource::make($cart), 'Produk ditambahkan ke keranjang', 201);
     }
@@ -129,7 +139,12 @@ class CartController extends Controller
 
         $item->update(['quantity' => $validated['quantity']]);
 
-        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
+        $cart->load([
+            'items.produk' => function ($query) {
+                $query->select('id', 'nama_produk', 'harga', 'gambar', 'is_active');
+            },
+            'items.produk.produkMarts.mart'
+        ]);
 
         return $this->success(CartResource::make($cart), 'Keranjang berhasil diperbarui');
     }
@@ -160,7 +175,12 @@ class CartController extends Controller
 
         $item->delete();
 
-        $cart->load(['items.produk:id,nama_produk,harga,gambar,is_active']);
+        $cart->load([
+            'items.produk' => function ($query) {
+                $query->select('id', 'nama_produk', 'harga', 'gambar', 'is_active');
+            },
+            'items.produk.produkMarts.mart'
+        ]);
 
         return $this->success(CartResource::make($cart), 'Item dihapus dari keranjang');
     }

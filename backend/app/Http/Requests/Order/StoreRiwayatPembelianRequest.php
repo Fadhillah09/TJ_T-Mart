@@ -20,6 +20,7 @@ class StoreRiwayatPembelianRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.produk_id' => ['required', 'integer', 'exists:produk,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.mart_id' => ['nullable', 'integer', 'exists:mart,id'],
         ];
     }
 }

@@ -21,6 +21,7 @@ class RiwayatPembelian extends Model
         'status',
         'total',
         'ongkir',
+        'biaya_layanan',
         'ongkir_driver',
         'metode_pembayaran',
         'alamat_pengantaran',
@@ -34,6 +35,7 @@ class RiwayatPembelian extends Model
         return [
             'total' => 'decimal:2',
             'ongkir' => 'decimal:2',
+            'biaya_layanan' => 'decimal:2',
             'ongkir_driver' => 'decimal:2',
             'jarak' => 'decimal:2',
             'tanggal_pesan' => 'datetime',

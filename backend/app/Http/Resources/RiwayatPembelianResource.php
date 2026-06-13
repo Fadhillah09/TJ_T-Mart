@@ -18,6 +18,7 @@ class RiwayatPembelianResource extends JsonResource
             'status' => $this->status,
             'total' => $this->total,
             'ongkir' => $this->ongkir,
+            'biaya_layanan' => $this->biaya_layanan,
             'ongkir_driver' => $this->ongkir_driver,
             'metode_pembayaran' => $this->metode_pembayaran,
             'alamat_pengantaran' => $this->alamat_pengantaran,

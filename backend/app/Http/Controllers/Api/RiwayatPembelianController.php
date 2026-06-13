@@ -75,6 +75,7 @@ class RiwayatPembelianController extends Controller
             $order = DB::transaction(function () use ($user, $validated) {
                 $subtotal = 0;
                 $details = [];
+                $uniqueMarts = [];
 
                 foreach ($validated['items'] as $item) {
                     $produk = Produk::lockForUpdate()->find($item['produk_id']);
@@ -83,33 +84,54 @@ class RiwayatPembelianController extends Controller
                         throw new RuntimeException("Produk ID {$item['produk_id']} tidak tersedia.");
                     }
 
-                    $availableStok = $this->availableStok($user, $produk);
+                    // Tentukan mart untuk item ini
+                    $martId = $item['mart_id'] ?? null;
+                    if (!$martId && $user->active_mart_id) {
+                        $existsInActive = ProdukMart::where('produk_id', $produk->id)
+                            ->where('mart_id', $user->active_mart_id)
+                            ->exists();
+                        if ($existsInActive) {
+                            $martId = $user->active_mart_id;
+                        }
+                    }
+                    if (!$martId) {
+                        $firstMart = ProdukMart::where('produk_id', $produk->id)->first();
+                        $martId = $firstMart ? $firstMart->mart_id : 1;
+                    }
+
+                    $uniqueMarts[$martId] = true;
+
+                    $availableStok = $this->availableStokForMart($martId, $produk);
 
                     if ($availableStok < $item['quantity']) {
                         throw new RuntimeException("Stok {$produk->nama_produk} tidak mencukupi.");
                     }
 
-                    $hargaSatuan = $this->resolveHarga($user, $produk);
+                    $hargaSatuan = $this->resolveHargaForMart($martId, $produk);
                     $itemSubtotal = $hargaSatuan * $item['quantity'];
                     $subtotal += $itemSubtotal;
 
                     $details[] = [
                         'produk' => $produk,
+                        'mart_id' => $martId,
                         'quantity' => $item['quantity'],
                         'harga_satuan' => $hargaSatuan,
                         'subtotal' => $itemSubtotal,
                     ];
                 }
 
-                $ongkir = $validated['tipe_layanan'] === 'delivery' ? self::ONGKIR_DELIVERY : 0;
+                $martsCount = count($uniqueMarts);
+                $ongkir = $validated['tipe_layanan'] === 'delivery' ? (self::ONGKIR_DELIVERY * $martsCount) : 0;
+                $layanan = $subtotal > 0 ? 1000 : 0;
 
                 $riwayat = RiwayatPembelian::create([
                     'user_id' => $user->id,
                     'order_id' => 'TM-'.strtoupper(uniqid()),
                     'tipe_layanan' => $validated['tipe_layanan'],
                     'status' => 'pending',
-                    'total' => $subtotal + $ongkir,
+                    'total' => $subtotal + $ongkir + $layanan,
                     'ongkir' => $ongkir,
+                    'biaya_layanan' => $layanan,
                     'metode_pembayaran' => $validated['metode_pembayaran'],
                     'alamat_pengantaran' => $validated['alamat_pengantaran'] ?? null,
                     'tanggal_pesan' => now(),
@@ -126,7 +148,7 @@ class RiwayatPembelianController extends Controller
                     ]);
 
                     $detail['produk']->decrement('stok', $detail['quantity']);
-                    $this->decrementProdukMartStok($user, $detail['produk']->id, $detail['quantity']);
+                    $this->decrementProdukMartStokForMart($detail['mart_id'], $detail['produk']->id, $detail['quantity']);
                 }
 
                 $cart = Cart::where('user_id', $user->id)->first();
@@ -291,45 +313,37 @@ class RiwayatPembelianController extends Controller
         );
     }
 
-    private function resolveHarga(User $user, Produk $produk): float
+    private function resolveHargaForMart(int $martId, Produk $produk): float
     {
-        if ($user->active_mart_id) {
-            $produkMart = ProdukMart::where('produk_id', $produk->id)
-                ->where('mart_id', $user->active_mart_id)
-                ->first();
+        $produkMart = ProdukMart::where('produk_id', $produk->id)
+            ->where('mart_id', $martId)
+            ->first();
 
-            if ($produkMart?->harga_lokal !== null) {
-                return (float) $produkMart->harga_lokal;
-            }
+        if ($produkMart?->harga_lokal !== null) {
+            return (float) $produkMart->harga_lokal;
         }
 
         return (float) $produk->harga;
     }
 
-    private function availableStok(User $user, Produk $produk): int
+    private function availableStokForMart(int $martId, Produk $produk): int
     {
-        if ($user->active_mart_id) {
-            $produkMart = ProdukMart::where('produk_id', $produk->id)
-                ->where('mart_id', $user->active_mart_id)
-                ->lockForUpdate()
-                ->first();
+        $produkMart = ProdukMart::where('produk_id', $produk->id)
+            ->where('mart_id', $martId)
+            ->lockForUpdate()
+            ->first();
 
-            if ($produkMart) {
-                return (int) $produkMart->stok_lokal;
-            }
+        if ($produkMart) {
+            return (int) $produkMart->stok_lokal;
         }
 
         return (int) $produk->stok;
     }
 
-    private function decrementProdukMartStok(User $user, int $produkId, int $qty): void
+    private function decrementProdukMartStokForMart(int $martId, int $produkId, int $qty): void
     {
-        if (! $user->active_mart_id) {
-            return;
-        }
-
         ProdukMart::where('produk_id', $produkId)
-            ->where('mart_id', $user->active_mart_id)
+            ->where('mart_id', $martId)
             ->decrement('stok_lokal', $qty);
     }
 
@@ -344,9 +358,23 @@ class RiwayatPembelianController extends Controller
 
             Produk::where('id', $detail->produk_id)->lockForUpdate()->increment('stok', $detail->jumlah);
 
+            $itemMartId = null;
             if ($martId) {
-                ProdukMart::where('produk_id', $detail->produk_id)
+                $exists = ProdukMart::where('produk_id', $detail->produk_id)
                     ->where('mart_id', $martId)
+                    ->exists();
+                if ($exists) {
+                    $itemMartId = $martId;
+                }
+            }
+            if (!$itemMartId) {
+                $firstMart = ProdukMart::where('produk_id', $detail->produk_id)->first();
+                $itemMartId = $firstMart ? $firstMart->mart_id : null;
+            }
+
+            if ($itemMartId) {
+                ProdukMart::where('produk_id', $detail->produk_id)
+                    ->where('mart_id', $itemMartId)
                     ->increment('stok_lokal', $detail->jumlah);
             }
         }

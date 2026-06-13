@@ -207,28 +207,34 @@ import { CartItem } from '@/types';
 // Kelompokkan cart berdasarkan mart_id
 export function groupCartByMart(
   items: CartItem[]
-): Record<number, { martName: string; items: CartItem[] }> {
+): Record<number, { martName: string; martAddress?: string; items: CartItem[] }> {
   return items.reduce((acc, item) => {
     if (!acc[item.mart_id]) {
       acc[item.mart_id] = {
         martName: item.mart_name,
+        martAddress: item.mart_address,
         items: []
       };
     }
     acc[item.mart_id].items.push(item);
     return acc;
-  }, {} as Record<number, { martName: string; items: CartItem[] }>);
+  }, {} as Record<number, { martName: string; martAddress?: string; items: CartItem[] }>);
 }
 
 // Hitung total order
 export function calcOrderTotal(
   items  : CartItem[],
   type   : "delivery" | "takeaway",
-  ongkir : number = 4000,
+  ongkirPerMart : number = 5000,
   layananFee: number = 1000
 ): { subtotal: number; ongkos: number; layanan: number; total: number } {
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  const ongkos = type === 'delivery' ? ongkir : 0;
+  
+  // Hitung jumlah mart unik
+  const uniqueMarts = new Set(items.map(item => item.mart_id));
+  const martCount = uniqueMarts.size;
+  
+  const ongkos = type === 'delivery' ? (ongkirPerMart * martCount) : 0;
   const layanan = subtotal > 0 ? layananFee : 0;
   const total = subtotal + ongkos + layanan;
   return { subtotal, ongkos, layanan, total };

@@ -117,30 +117,38 @@ export default function CheckoutPage() {
     if (buyNowState?.produk_id) {
       const p = buyNowProductData?.data;
       if (!p) return [];
-      const martId = activeMart?.id || p.produk_marts?.[0]?.mart_id || 1;
-      const martName = activeMart?.nama_mart || p.produk_marts?.[0]?.mart?.nama_mart || "Mart";
+      const pmList = p.produk_marts || [];
+      const activePm = activeMart ? pmList.find((pm: any) => pm.mart_id === activeMart.id) : null;
+      const mart = activePm?.mart || pmList[0]?.mart || activeMart || { id: 1, nama_mart: "Mart", alamat: "" };
       return [{
         id: 0,
         product_id: p.id,
         product_name: p.nama_produk || "",
-        mart_id: martId,
-        mart_name: martName,
+        mart_id: mart.id,
+        mart_name: mart.nama_mart || "Mart",
+        mart_address: mart.alamat || "",
         qty: buyNowState.qty || 1,
         price: p.harga || 0,
         image_url: p.gambar_url || "",
       }];
     }
 
-    return rawCartItems.map((item: any) => ({
-      id: item.id,
-      product_id: item.produk_id,
-      product_name: item.produk?.nama_produk || "",
-      mart_id: activeMart?.id || item.produk?.produk_marts?.[0]?.mart_id || 1,
-      mart_name: activeMart?.nama_mart || item.produk?.produk_marts?.[0]?.mart?.nama_mart || "Mart",
-      qty: item.quantity,
-      price: item.produk?.harga || 0,
-      image_url: item.produk?.gambar_url || "",
-    }));
+    return rawCartItems.map((item: any) => {
+      const pmList = item.produk?.produk_marts || [];
+      const activePm = activeMart ? pmList.find((pm: any) => pm.mart_id === activeMart.id) : null;
+      const mart = activePm?.mart || pmList[0]?.mart || activeMart || { id: 1, nama_mart: "Mart", alamat: "" };
+      return {
+        id: item.id,
+        product_id: item.produk_id,
+        product_name: item.produk?.nama_produk || "",
+        mart_id: mart.id,
+        mart_name: mart.nama_mart || "Mart",
+        mart_address: mart.alamat || "",
+        qty: item.quantity,
+        price: item.produk?.harga || 0,
+        image_url: item.produk?.gambar_url || "",
+      };
+    });
   }, [rawCartItems, buyNowState, buyNowProductData, activeMart]);
 
   const groupedItems = useMemo(() => groupCartByMart(mappedCartItems), [mappedCartItems]);
@@ -188,6 +196,7 @@ export default function CheckoutPage() {
       items: mappedCartItems.map((item) => ({
         produk_id: item.product_id,
         quantity: item.qty,
+        mart_id: item.mart_id,
       })),
       note: form.note,
     };
@@ -250,27 +259,7 @@ export default function CheckoutPage() {
       <Header />
       <SubHeader />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
-        {/* Breadcrumb */}
-        <nav className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-          <span className="hover:text-red-600 cursor-pointer transition-colors" onClick={() => navigate("/")}>Beranda</span>
-          <span className="text-gray-300">/</span>
-          {buyNowState?.produk_id ? (
-            <>
-              <span className="hover:text-red-600 cursor-pointer transition-colors max-w-[200px] truncate" onClick={() => navigate(`/produk/${buyNowState.produk_id}`)}>
-                {buyNowProductData?.data?.nama_produk || "Produk"}
-              </span>
-              <span className="text-gray-300">/</span>
-            </>
-          ) : (
-            <>
-              <span className="hover:text-red-600 cursor-pointer transition-colors" onClick={() => navigate("/cart")}>
-                Keranjang
-              </span>
-              <span className="text-gray-300">/</span>
-            </>
-          )}
-          <span className="text-[#5B000B]">Checkout</span>
-        </nav>
+        {/* Breadcrumb Removed */}
 
         <h1 className="text-2xl font-extrabold text-[#5B000B] mb-6">
           Checkout Pesanan
@@ -286,7 +275,7 @@ export default function CheckoutPage() {
               selectedGedung={selectedGedung}
               setSelectedGedung={setSelectedGedung}
             />
-            <CartItemGroup grouped={groupedItems} />
+            <CartItemGroup items={mappedCartItems} />
           </div>
 
           {/* Kanan */}

@@ -98,6 +98,7 @@ export interface CartItem {
   product_name : string;
   mart_id      : number;
   mart_name    : string;
+  mart_address?: string;
   qty          : number;
   price        : number;
   image_url?   : string;
