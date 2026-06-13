@@ -168,7 +168,9 @@ export default function CheckoutPage() {
         if (backendErrors.tipe_layanan) mappedErrors.type = backendErrors.tipe_layanan[0];
         if (backendErrors.metode_pembayaran) mappedErrors.payment_method = backendErrors.metode_pembayaran[0];
         setErrors(mappedErrors);
-        toast.error("Validasi gagal. Silakan periksa kembali input Anda.");
+        const errorList = Object.values(backendErrors).flat() as string[];
+        const errorMsg = errorList.length > 0 ? errorList.join(", ") : (err.response.data?.message || "Validasi gagal. Silakan periksa kembali input Anda.");
+        toast.error(errorMsg);
       } else {
         toast.error(err.response?.data?.message || "Terjadi kesalahan saat membuat pesanan.");
       }

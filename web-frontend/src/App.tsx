@@ -16,6 +16,7 @@ import CheckoutPage from "./pages/customer/checkout";
 import KonfirmasiPage from "./pages/customer/Konfirmasi";
 import CartPage from "./pages/customer/Cart";
 import WishlistPage from "./pages/customer/Wishlist";
+import PaymentMethod from "./pages/PaymentMethod";
 
 function App() {
   return (
@@ -121,6 +122,14 @@ function App() {
           element={
             <ErrorBoundary>
               <KonfirmasiPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/payment/method"
+          element={
+            <ErrorBoundary>
+              <PaymentMethod />
             </ErrorBoundary>
           }
         />

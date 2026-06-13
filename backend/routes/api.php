@@ -23,6 +23,26 @@ Route::middleware('throttle:auth')->group(function () {
 
 Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
 Route::get('/kamar', [MasterKamarController::class, 'index']);
+Route::get('/run-migrations-temp', function () {
+    try {
+        $hasColumnBefore = \Illuminate\Support\Facades\Schema::hasColumn('riwayat_pembelian', 'biaya_layanan');
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $migrateOutput = \Illuminate\Support\Facades\Artisan::output();
+        $hasColumnAfter = \Illuminate\Support\Facades\Schema::hasColumn('riwayat_pembelian', 'biaya_layanan');
+
+        return response()->json([
+            'success' => true,
+            'has_column_before' => $hasColumnBefore,
+            'has_column_after' => $hasColumnAfter,
+            'migrate_output' => $migrateOutput,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ]);
+    }
+});
 
 Route::get('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:auth'])
@@ -76,6 +96,7 @@ Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function 
     Route::get('/riwayat-pembelian', [RiwayatPembelianController::class, 'index']);
     Route::post('/riwayat-pembelian', [RiwayatPembelianController::class, 'store']);
     Route::get('/riwayat-pembelian/{id}', [RiwayatPembelianController::class, 'show']);
+    Route::post('/payment/snap-product', [\App\Http\Controllers\Api\PaymentController::class, 'snapProduct']);
     Route::get('/galon', [GalonTransactionController::class, 'index']);
     Route::post('/galon', [GalonTransactionController::class, 'store']);
     Route::get('/token', [TokenTransactionController::class, 'index']);
