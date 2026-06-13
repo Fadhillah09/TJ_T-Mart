@@ -48,6 +48,21 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
+    Route::get('/user/profile', function (\Illuminate\Http\Request $request) {
+        $user = $request->user()->load('lokasi');
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil diambil',
+            'data' => [
+                'kamar' => $user->nomor_kamar,
+                'gedung' => $user->lokasi?->nama_gedung,
+                'nama' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+            ]
+        ]);
+    });
+
     Route::post('/produk/{id}/rating', [ProdukController::class, 'storeRating']);
     Route::post('/produk/{id}/komentar', [ProdukController::class, 'storeKomentar']);
 

@@ -201,3 +201,51 @@ export const calculateDiscount = (originalPrice: number, discountPrice: number):
 export const pluralize = (count: number, singular: string, plural: string): string => {
   return count === 1 ? singular : plural;
 };
+
+import { CartItem } from '@/types';
+
+// Kelompokkan cart berdasarkan mart_id
+export function groupCartByMart(
+  items: CartItem[]
+): Record<number, { martName: string; items: CartItem[] }> {
+  return items.reduce((acc, item) => {
+    if (!acc[item.mart_id]) {
+      acc[item.mart_id] = {
+        martName: item.mart_name,
+        items: []
+      };
+    }
+    acc[item.mart_id].items.push(item);
+    return acc;
+  }, {} as Record<number, { martName: string; items: CartItem[] }>);
+}
+
+// Hitung total order
+export function calcOrderTotal(
+  items  : CartItem[],
+  type   : "delivery" | "takeaway",
+  ongkir : number = 4000,
+  layananFee: number = 1000
+): { subtotal: number; ongkos: number; layanan: number; total: number } {
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const ongkos = type === 'delivery' ? ongkir : 0;
+  const layanan = subtotal > 0 ? layananFee : 0;
+  const total = subtotal + ongkos + layanan;
+  return { subtotal, ongkos, layanan, total };
+}
+
+// Trim semua string field di object form
+export function sanitizeForm<T extends Record<string, unknown>>(form: T): T {
+  const sanitized = {} as Record<string, unknown>;
+  for (const key in form) {
+    if (Object.prototype.hasOwnProperty.call(form, key)) {
+      const val = form[key];
+      if (typeof val === 'string') {
+        sanitized[key] = val.trim();
+      } else {
+        sanitized[key] = val;
+      }
+    }
+  }
+  return sanitized as T;
+}

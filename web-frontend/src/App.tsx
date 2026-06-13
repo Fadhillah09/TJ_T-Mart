@@ -12,6 +12,10 @@ import TokenPage from "@/pages/customer/token/TokenPage";
 import TokenResult from "@/components/token/TokenResult";
 import TokenHistory from "@/components/token/TokenHistory";
 import ProdukDetail from "./pages/customer/ProdukDetail";
+import CheckoutPage from "./pages/customer/checkout";
+import KonfirmasiPage from "./pages/customer/Konfirmasi";
+import CartPage from "./pages/customer/Cart";
+import WishlistPage from "./pages/customer/Wishlist";
 
 function App() {
   return (
@@ -88,6 +92,38 @@ function App() {
           }
         />
         <Route path="/produk/:id" element={<ProdukDetail />} />
+        <Route
+          path="/checkout"
+          element={
+            <ErrorBoundary>
+              <CheckoutPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <ErrorBoundary>
+              <CartPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <ErrorBoundary>
+              <WishlistPage />
+            </ErrorBoundary>
+          }
+        />
+        <Route
+          path="/customer/konfirmasi"
+          element={
+            <ErrorBoundary>
+              <KonfirmasiPage />
+            </ErrorBoundary>
+          }
+        />
       </Routes>
     </Router>
   );

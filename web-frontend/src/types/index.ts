@@ -75,7 +75,7 @@ export interface Banner {
   is_active: boolean;
 }
 
-export interface CartItem {
+export interface BackendCartItem {
   id: number;
   cart_id: number;
   produk_id: number;
@@ -88,9 +88,34 @@ export interface CartItem {
 export interface Cart {
   id: number;
   user_id: number;
-  items?: CartItem[];
+  items?: BackendCartItem[];
   created_at: string;
 }
+
+export interface CartItem {
+  id           : number;
+  product_id   : number;
+  product_name : string;
+  mart_id      : number;
+  mart_name    : string;
+  qty          : number;
+  price        : number;
+  image_url?   : string;
+}
+
+export interface CheckoutForm {
+  type            : "delivery" | "takeaway";
+  mart_id         : number;
+  kamar           : string;
+  payment_method  : "cod" | "transfer";
+  note            : string;
+}
+
+export interface OrderPayload extends CheckoutForm {
+  items: { product_id: number; qty: number; price: number }[];
+}
+
+export type CheckoutErrors = Partial<Record<keyof CheckoutForm, string>>;
 
 export interface DetailPembelian {
   id: number;
