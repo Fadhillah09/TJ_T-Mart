@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import api from "@/api/axiosConfig";
 import { produkApi } from "@/api/produk";
@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { DeliveryForm } from "./DeliveryForm";
 import { CartItemGroup } from "./CartItemGroup";
 import { OrderSummary } from "./OrderSummary";
-import { groupCartByMart, calcOrderTotal, sanitizeForm } from "@/utils/helpers";
+import { calcOrderTotal, sanitizeForm } from "@/utils/helpers";
 import { CheckoutForm, CheckoutErrors, CartItem } from "@/types";
 import { ShoppingBag } from "lucide-react";
 import Header from "@/components/layout/Header";
@@ -23,7 +23,7 @@ import Footer from "@/components/layout/Footer";
 // Zod Validation Schema
 const checkoutSchema = z.object({
   type: z.enum(["delivery", "takeaway"]),
-  mart_id: z.number({ required_error: "Pilih mart terlebih dahulu" }),
+  mart_id: z.number({ error: "Pilih mart terlebih dahulu" }),
   kamar: z.string().optional(),
   payment_method: z.enum(["cod", "transfer"]),
   note: z.string().max(255).optional(),
@@ -43,6 +43,7 @@ export default function CheckoutPage() {
 
   const navigate = useNavigate();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const { activeMart } = useMartStore();
 
   const [form, setForm] = useState<CheckoutForm>({
@@ -151,14 +152,64 @@ export default function CheckoutPage() {
     });
   }, [rawCartItems, buyNowState, buyNowProductData, activeMart]);
 
-  const groupedItems = useMemo(() => groupCartByMart(mappedCartItems), [mappedCartItems]);
   const totals = useMemo(() => calcOrderTotal(mappedCartItems, form.type), [mappedCartItems, form.type]);
 
   const createOrderMutation = useMutation({
     mutationFn: (payload: any) => orderApi.createOrder(payload),
-    onSuccess: (res: any) => {
+    onSuccess: async (res: any) => {
       toast.success("Pesanan berhasil dibuat!");
-      navigate("/customer/konfirmasi", { state: { order_id: res.data?.order_id || res.data?.id } });
+      queryClient.invalidateQueries({ queryKey: ['produk'] });
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      const order = res.data;
+      const orderId = order?.order_id || order?.id || "N/A";
+      const totalAmount = order?.total || totals.total;
+      const address = form.type === "delivery" 
+        ? `${selectedGedung}, Kamar ${form.kamar}` 
+        : (activeMart?.alamat || "T-Mart");
+
+      const martName = activeMart?.nama_mart || "TJ Mart Putra";
+      const martId = form.mart_id || activeMart?.id || 1;
+
+      if (form.payment_method === "transfer") {
+        // Langsung panggil Midtrans Snap di halaman checkout
+        try {
+          const snapRes = await api.post(
+            "/payment/snap-product",
+            { total_amount: totalAmount, product_id: null, qty: null },
+            { timeout: 15000 }
+          );
+          const snapToken = snapRes.data?.snap_token;
+          if (!snapToken) throw new Error("Token Snap tidak valid.");
+ 
+          window.snap.pay(snapToken, {
+            onSuccess: () => {
+              navigate(
+                `/order/success?method=online&status=paid&amount=${totalAmount}&order_id=${orderId}&payment_method=${encodeURIComponent("Midtrans Online")}&type=${form.type}&address=${encodeURIComponent(address)}&mart_id=${martId}&mart_name=${encodeURIComponent(martName)}`
+              );
+            },
+            onPending: () => {
+              navigate(
+                `/order/success?method=online&status=pending&amount=${totalAmount}&order_id=${orderId}&payment_method=${encodeURIComponent("Midtrans Online")}&type=${form.type}&address=${encodeURIComponent(address)}&mart_id=${martId}&mart_name=${encodeURIComponent(martName)}`
+              );
+            },
+            onError: () => {
+              toast.error("Pembayaran Midtrans gagal diproses.");
+            },
+            onClose: () => {
+              toast.error("Pembayaran dibatalkan. Pesanan tetap tersimpan.");
+            },
+          });
+        } catch (snapErr: any) {
+          console.error("Snap error:", snapErr);
+          toast.error(snapErr?.response?.data?.message || "Gagal membuat sesi pembayaran Midtrans.");
+        }
+      } else {
+        navigate(
+          `/order/success?method=cash_cod&status=pending&amount=${totalAmount}&order_id=${orderId}&payment_method=${encodeURIComponent(
+            "Bayar di Tempat (COD)"
+          )}&type=${form.type}&address=${encodeURIComponent(address)}&mart_id=${martId}&mart_name=${encodeURIComponent(martName)}`
+        );
+      }
     },
     onError: (err: any) => {
       if (err.response?.status === 422) {

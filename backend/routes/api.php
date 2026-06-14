@@ -23,26 +23,6 @@ Route::middleware('throttle:auth')->group(function () {
 
 Route::get('/lokasi', [LokasiDeliveryController::class, 'index']);
 Route::get('/kamar', [MasterKamarController::class, 'index']);
-Route::get('/run-migrations-temp', function () {
-    try {
-        $hasColumnBefore = \Illuminate\Support\Facades\Schema::hasColumn('riwayat_pembelian', 'biaya_layanan');
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $migrateOutput = \Illuminate\Support\Facades\Artisan::output();
-        $hasColumnAfter = \Illuminate\Support\Facades\Schema::hasColumn('riwayat_pembelian', 'biaya_layanan');
-
-        return response()->json([
-            'success' => true,
-            'has_column_before' => $hasColumnBefore,
-            'has_column_after' => $hasColumnAfter,
-            'migrate_output' => $migrateOutput,
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ]);
-    }
-});
 
 Route::get('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:auth'])

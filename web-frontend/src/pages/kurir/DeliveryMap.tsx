@@ -24,9 +24,9 @@ const DeliveryMap = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState("Diantar");
 
-  // Koordinat Asrama Telkom University (Lat, Lng)
+  // Koordinat Asrama Telkom University (Gedung Asrama A)
   // Tipe data [number, number]
-  const centerPosition: [number, number] = [-6.9765, 107.6331];
+  const centerPosition: [number, number] = [-6.9740468, 107.6285963];
 
   const handleUpdateStatus = (newStatus: string) => {
     setStatus(newStatus);

@@ -1,97 +1,82 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "@/api/axiosConfig";
+import Header from "@/components/layout/Header";
+import SubHeader from "@/components/layout/SubHeader";
+import Footer from "@/components/layout/Footer";
+import { CreditCard, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 
-declare global {
-  interface Window {
-    snap: {
-      pay: (token: string, options: {
-        onSuccess: (result: any) => void;
-        onPending: (result: any) => void;
-        onError: (result: any) => void;
-        onClose: () => void;
-      }) => void;
-    };
-  }
-}
-
-type PaymentMethodType = "va_online" | "cash_cod" | "cash_kasir";
+const formatRupiah = (num: number) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(num);
 
 export default function PaymentMethod() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // 3. Sanitasi Query Params
+  // Parse query params from checkout redirect
   const amount = parseInt(searchParams.get("amount") ?? "0", 10);
   const type = searchParams.get("type") === "takeaway" ? "takeaway" : "delivery";
   const address = (searchParams.get("address") ?? "").slice(0, 200);
-  const productId = searchParams.get("product_id") || undefined;
-  const qty = searchParams.get("qty") || undefined;
+  const orderIdFromUrl = searchParams.get("order_id") || "";
 
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>("va_online");
   const [isLoading, setIsLoading] = useState(false);
   const [snapError, setSnapError] = useState<string | null>(null);
+
+  // Validate amount on mount
+  useEffect(() => {
+    if (!amount || isNaN(amount) || amount <= 0) {
+      setSnapError("Data pembayaran tidak valid. Silakan ulangi proses checkout.");
+    }
+  }, [amount]);
 
   const handlePayment = async () => {
     setSnapError(null);
 
-    // 2. Validasi Amount di Frontend
     if (!amount || isNaN(amount) || amount <= 0) {
       setSnapError("Jumlah pembayaran tidak valid.");
       return;
     }
 
-    if (selectedMethod !== "va_online") {
-      setSnapError("Metode pembayaran non-Midtrans belum tersedia.");
-      return;
-    }
-
-    // 1. Proteksi Double Submit
+    // Double submit guard
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
-      // 5. CSRF & 8. Timeout Request
       const response = await api.post(
         "/payment/snap-product",
         {
           total_amount: amount,
-          product_id: productId,
-          qty: qty,
+          product_id: null,
+          qty: null,
         },
-        {
-          timeout: 15000,
-        }
+        { timeout: 15000 }
       );
 
-      const data = response.data?.data || response.data;
+      const snapToken = response.data?.snap_token;
+      const orderId = orderIdFromUrl || response.data?.order_id || `ORDER-${Date.now()}`;
 
-      // 4. Validasi Response Snap Token
-      if (!data?.snap_token || typeof data.snap_token !== "string") {
+      if (!snapToken || typeof snapToken !== "string") {
         throw new Error("Token Snap Midtrans tidak valid.");
       }
 
-      const snapToken = data.snap_token;
-      const orderId = data.order_id || `ORDER-${Date.now()}`;
-
-      // 4. Panggil snap.pay
+      // Trigger Midtrans Snap popup
       window.snap.pay(snapToken, {
-        onSuccess: (result: any) => {
-          // 6. Jangan Expose Sensitive Data di URL
+        onSuccess: () => {
           navigate(
-            `/order/success?method=online&status=paid&amount=${amount}&order_id=${orderId}&payment_method=Midtrans%20Online&type=${type}&address=${encodeURIComponent(
-              address
-            )}`
+            `/order/success?method=online&status=paid&amount=${amount}&order_id=${orderId}&payment_method=${encodeURIComponent("Midtrans Online")}&type=${type}&address=${encodeURIComponent(address)}`
           );
         },
-        onPending: (result: any) => {
+        onPending: () => {
           navigate(
-            `/order/success?method=online&status=pending&amount=${amount}&order_id=${orderId}&payment_method=Midtrans%20Online&type=${type}&address=${encodeURIComponent(
-              address
-            )}`
+            `/order/success?method=online&status=pending&amount=${amount}&order_id=${orderId}&payment_method=${encodeURIComponent("Midtrans Online")}&type=${type}&address=${encodeURIComponent(address)}`
           );
         },
-        onError: (result: any) => {
-          setSnapError("Pembayaran Midtrans gagal diproses.");
+        onError: () => {
+          setSnapError("Pembayaran Midtrans gagal diproses. Silakan coba lagi.");
           setIsLoading(false);
         },
         onClose: () => {
@@ -99,15 +84,13 @@ export default function PaymentMethod() {
         },
       });
     } catch (err: any) {
-      console.error("Payment method error:", err);
-      // 7. Error Handling Terstruktur
+      console.error("Payment error:", err);
       if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
         setSnapError("Permintaan timeout, silakan coba lagi.");
       } else if (err.response) {
-        const msg = err.response.data?.message || "Terjadi kesalahan server.";
-        setSnapError(msg);
+        setSnapError(err.response.data?.message || "Terjadi kesalahan server.");
       } else if (err.request) {
-        setSnapError("Koneksi gagal, coba lagi.");
+        setSnapError("Koneksi gagal, pastikan koneksi internet Anda stabil.");
       } else {
         setSnapError(err.message || "Gagal membuat sesi pembayaran.");
       }
@@ -116,81 +99,108 @@ export default function PaymentMethod() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-md border border-gray-100 p-6 space-y-6">
-        <h2 className="text-lg font-extrabold text-[#5B000B] uppercase tracking-wide border-b pb-3">
-          Metode Pembayaran
-        </h2>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <SubHeader />
 
-        <div className="space-y-3">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Pilih Metode
-          </label>
-          <div className="space-y-2">
-            {[
-              { id: "va_online", label: "Midtrans Online Payment" },
-              { id: "cash_cod", label: "Bayar di Tempat (COD)" },
-              { id: "cash_kasir", label: "Bayar di Kasir" },
-            ].map((m) => (
-              <div
-                key={m.id}
-                onClick={() => !isLoading && setSelectedMethod(m.id as PaymentMethodType)}
-                className={`p-3 text-sm font-semibold rounded-xl border transition-all flex items-center gap-3 cursor-pointer ${
-                  selectedMethod === m.id
-                    ? "border-red-600 bg-red-50 text-red-700 font-extrabold"
-                    : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                    selectedMethod === m.id ? "border-red-600 bg-red-600" : "border-gray-300"
-                  }`}
-                >
-                  {selectedMethod === m.id && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+      <main className="flex-grow flex items-center justify-center px-4 pt-32 pb-24">
+        <div className="w-full max-w-md space-y-6">
+          {/* Payment Card */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-700 to-red-600 px-6 py-5 text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <CreditCard size={20} />
                 </div>
-                <span>{m.label}</span>
+                <div>
+                  <p className="text-xs font-bold tracking-widest uppercase text-red-100">
+                    Pembayaran Online
+                  </p>
+                  <h2 className="text-lg font-black tracking-tight">Midtrans Payment</h2>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {/* Amount Display */}
+              <div className="bg-red-50/60 border border-red-100 rounded-2xl p-5 text-center space-y-1">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Total Tagihan
+                </p>
+                <p className="text-3xl font-black text-red-600 tracking-tight">
+                  {formatRupiah(amount)}
+                </p>
+                {orderIdFromUrl && (
+                  <p className="text-[10px] text-gray-400 font-semibold mt-1">
+                    Invoice: {orderIdFromUrl}
+                  </p>
+                )}
+              </div>
+
+              {/* Security Badge */}
+              <div className="flex items-center gap-2.5 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                <ShieldCheck size={16} className="text-emerald-600 flex-shrink-0" />
+                <p className="text-[10px] text-emerald-700 font-semibold leading-snug">
+                  Pembayaran dijamin aman melalui gateway Midtrans yang terenkripsi.
+                </p>
+              </div>
+
+              {/* Error Alert */}
+              {snapError && (
+                <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-200 rounded-xl animate-fadeIn">
+                  <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-600 font-semibold leading-snug" role="alert">
+                    {snapError}
+                  </p>
+                </div>
+              )}
+
+              {/* Payment Button */}
+              <button
+                type="button"
+                disabled={isLoading || !amount || amount <= 0}
+                onClick={handlePayment}
+                className={`w-full py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all duration-150 flex items-center justify-center gap-2 ${
+                  isLoading || !amount || amount <= 0
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-red-600 text-white hover:bg-red-700 active:scale-[0.98] shadow-lg shadow-red-900/20"
+                }`}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Memproses Pembayaran...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard size={16} />
+                    <span>Bayar Sekarang</span>
+                  </>
+                )}
+              </button>
+
+              {/* Back button */}
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => navigate(-1)}
+                className="w-full py-3 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors uppercase tracking-wider"
+              >
+                Kembali
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="bg-red-50/50 border border-red-100 rounded-xl p-4 text-xs font-semibold text-gray-600 space-y-1">
-          <div className="flex justify-between">
-            <span>Total Tagihan:</span>
-            <span className="text-red-600 font-bold text-sm">
-              Rp {amount.toLocaleString("id-ID")}
-            </span>
-          </div>
+          {/* Footer Info */}
+          <p className="text-[9px] text-gray-400 font-medium text-center leading-normal px-4">
+            Anda akan diarahkan ke halaman pembayaran Midtrans. Setelah pembayaran selesai, Anda akan otomatis kembali ke halaman konfirmasi pesanan.
+          </p>
         </div>
+      </main>
 
-        <div className="space-y-2">
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={handlePayment}
-            className={`w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-              isLoading
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-red-600 text-white hover:bg-red-700 active:scale-[0.98] shadow-lg shadow-red-900/20"
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                <span>Memproses...</span>
-              </>
-            ) : (
-              <span>Konfirmasi Pembayaran</span>
-            )}
-          </button>
-
-          {snapError && (
-            <p className="text-xs text-red-600 font-semibold text-center mt-2" role="alert">
-              {snapError}
-            </p>
-          )}
-        </div>
-      </div>
+      <Footer />
     </div>
   );
 }

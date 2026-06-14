@@ -41,7 +41,7 @@ class RiwayatPembelianController extends Controller
     {
         $orders = RiwayatPembelian::query()
             ->where('user_id', $request->user()->id)
-            ->with(['details.produk:id,nama_produk,gambar', 'kurir:id,name'])
+            ->with(['details.produk.produkMarts.mart', 'kurir:id,name'])
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
             ->latest('tanggal_pesan')
             ->paginate(10);
@@ -195,7 +195,7 @@ class RiwayatPembelianController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         $order = RiwayatPembelian::with([
-            'details.produk:id,nama_produk,gambar,harga',
+            'details.produk.produkMarts.mart',
             'kurir:id,name',
             'user:id,name,email',
         ])->find($id);

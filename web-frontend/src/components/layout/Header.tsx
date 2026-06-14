@@ -4,8 +4,9 @@ import { useCartStore } from "@/store/cartStore";
 import { useNotifStore } from "@/store/notifStore";
 import { User } from "@/types/index";
 import { useAuth } from "@/hooks/useAuth";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { useOrderTrackingStore } from "@/store/orderTrackingStore";
 // @ts-ignore
 import "@styles/header.css";
 
@@ -27,11 +28,14 @@ const resolveFotoUrl = (foto?: string, foto_url?: string): string | null => {
 export default function Header({ isUser = true }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
+  const navigate = useNavigate();
   const user = useAuthStore((state: any) => state.user) as User | null;
   const { totalItems } = useCartStore();
   const { unreadCount } = useNotifStore();
   const { logout } = useAuth();
+  const { notifications, markNotificationsAsRead, sessions } = useOrderTrackingStore();
 
   const userPhoto = resolveFotoUrl(user?.foto, user?.foto_url);
   const inisialNama = user?.name
@@ -102,27 +106,82 @@ export default function Header({ isUser = true }: HeaderProps) {
                 >
                   <span className="shine-layer"></span>
                   <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100-4h10m-8 2a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   <span className="animate-badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center bg-sub-header text-white text-[9px] font-bold rounded-full ring-1 ring-white">
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
                 </Link>
 
-                <Link
-                  to="/notifications"
-                  className="nav-icon-btn btn-active-scale relative shrink-0 hidden md:flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 hover:bg-[#930014]/10 text-black hover:text-[#930014]"
-                >
-                  <span className="shine-layer"></span>
-                  <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {unreadCount > 0 && (
-                    <span className="animate-badge-pulse absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-sub-header text-white text-[10px] font-semibold rounded-full ring-2 ring-white">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setNotifDropdownOpen(!notifDropdownOpen);
+                      setDropdownOpen(false);
+                      if (!notifDropdownOpen) {
+                        markNotificationsAsRead();
+                      }
+                    }}
+                    className="nav-icon-btn btn-active-scale relative shrink-0 hidden md:flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 hover:bg-[#930014]/10 text-black hover:text-[#930014] cursor-pointer"
+                  >
+                    <span className="shine-layer"></span>
+                    <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="animate-badge-pulse absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-sub-header text-white text-[10px] font-semibold rounded-full ring-2 ring-white">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl bg-white ring-1 ring-black/5 divide-y divide-gray-100 z-50 overflow-hidden animate-scale-pop">
+                      <div className="px-4 py-3 bg-gradient-to-r from-[#5B000B] to-[#dc2626] text-white flex justify-between items-center">
+                        <p className="text-xs uppercase font-black tracking-widest">Pusat Notifikasi</p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markNotificationsAsRead();
+                          }}
+                          className="text-[10px] font-bold text-red-100 hover:text-white underline cursor-pointer"
+                        >
+                          Tandai Semua Dibaca
+                        </button>
+                      </div>
+                      <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center text-gray-400 space-y-2">
+                            <svg className="w-8 h-8 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <p className="text-xs font-semibold">Tidak ada notifikasi pelacakan</p>
+                          </div>
+                        ) : (
+                          notifications.map((notif) => (
+                            <div
+                              key={notif.id}
+                              onClick={() => {
+                                setNotifDropdownOpen(false);
+                                navigate(`/order/success?order_id=${notif.orderId}`);
+                              }}
+                              className={`p-3 text-xs hover:bg-[#fee2e2]/30 cursor-pointer transition-all ${!notif.read ? 'bg-red-50/60 font-bold' : ''}`}
+                            >
+                              <div className="flex justify-between items-start gap-1">
+                                <p className="font-extrabold text-[#5B000B]">{notif.title}</p>
+                                <span className="text-[9px] text-gray-400 font-medium">
+                                  {new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 mt-0.5 leading-snug font-medium line-clamp-2">{notif.message}</p>
+                              <span className="text-[9px] text-red-500 font-extrabold mt-1 block">Lacak Pesanan ➔</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   )}
-                </Link>
+                </div>
               </>
             )}
 
@@ -206,12 +265,23 @@ export default function Header({ isUser = true }: HeaderProps) {
             </svg>
             Cart ({totalItems})
           </Link>
-          <Link to="/notifications" className="mobile-link flex items-center gap-3 py-2">
+          <button
+            onClick={() => {
+              setOpen(false);
+              const activeSession = Object.keys(sessions)[0];
+              if (activeSession) {
+                navigate(`/order/success?order_id=${activeSession}`);
+              } else {
+                navigate('/');
+              }
+            }}
+            className="mobile-link w-full text-left flex items-center gap-3 py-2 cursor-pointer bg-transparent border-none outline-none font-medium"
+          >
             <svg className="w-5 h-5 text-[#dc2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             Notifikasi ({unreadCount})
-          </Link>
+          </button>
           {user && (
             <div className="pt-2 mt-2 border-t border-gray-100">
               <button onClick={() => logout()}

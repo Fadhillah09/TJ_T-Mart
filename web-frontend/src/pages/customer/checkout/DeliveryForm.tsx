@@ -63,7 +63,7 @@ export const DeliveryForm: React.FC<DeliveryFormProps> = ({
     setTempKamar(form.kamar);
   }, [selectedGedung, form.kamar]);
 
-  const activeCoordinate = GEDUNG_COORDINATES[selectedGedung] || [-6.9765, 107.6331];
+  const activeCoordinate = GEDUNG_COORDINATES[selectedGedung] || [-6.9740, 107.6303];
 
   const handleSave = () => {
     if (!tempKamar.trim()) {

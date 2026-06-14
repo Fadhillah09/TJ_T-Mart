@@ -7,19 +7,6 @@ import SubHeader from '@/components/layout/SubHeader';
 import Footer from '@/components/layout/Footer';
 import { createSnapToken, saveTransaksiToken } from '@/api/token';
 
-declare global {
-  interface Window {
-    snap: {
-      pay: (token: string, options: {
-        onSuccess: (result: any) => void;
-        onPending: () => void;
-        onError: () => void;
-        onClose: () => void;
-      }) => void;
-    };
-  }
-}
-
 const MOCK_TOKENS = [
   { nominal: 25000,  harga: 25500  },
   { nominal: 50000,  harga: 51000  },

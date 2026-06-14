@@ -25,18 +25,19 @@ class ProdukController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user('sanctum');
-        $martId = $request->mart_id ?? $user?->active_mart_id;
-
+        // Always load ALL produk_marts so mart badges are always visible
         $query = Produk::query()
-            ->with(['kategori:id,nama_kategori', 'produkMarts.mart:id,nama_mart'])
+            ->with(['kategori:id,nama_kategori', 'produkMarts.mart:id,nama_mart,alamat'])
             ->withAvg('reviews as avg_rating', 'rating')
             ->withCount('reviews as total_reviews')
             ->where('is_active', true)
             ->when($request->kategori_id, fn ($q, $id) => $q->where('kategori_id', $id))
             ->when($request->search, fn ($q, $search) => $q->where('nama_produk', 'like', '%'.addcslashes($search, '%_\\').'%'))
-            ->when($martId, fn ($q) => $q->with(['produkMarts' => fn ($pm) => $pm->with('mart')->where('mart_id', $martId)]), fn ($q) => $q->with('produkMarts.mart'));
+            // Only restrict by mart when explicitly filtered via ?mart_id= query param
+            ->when($request->mart_id, fn ($q, $id) => $q->whereHas('produkMarts', fn ($pm) => $pm->where('mart_id', $id)));
 
-        $produk = $query->latest()->paginate(20);
+        $perPage = min((int) ($request->per_page ?? 20), 200);
+        $produk  = $query->latest()->paginate($perPage);
 
         $wishlistedIds = $user
             ? Wishlist::where('user_id', $user->id)->pluck('produk_id')->flip()

@@ -27,7 +27,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = React.memo(({
   onSubmit,
   form,
   onChange,
-  errors,
+  errors: _errors,
 }) => {
   const [agreed, setAgreed] = useState(false);
   const [noteInput, setNoteInput] = useState(form.note);

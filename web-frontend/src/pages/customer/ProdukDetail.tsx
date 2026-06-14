@@ -4,7 +4,6 @@ import { useCart } from "@/hooks/useCart";
 import Header from "@/components/layout/Header";
 import SubHeader from "@/components/layout/SubHeader";
 import Footer from "@/components/layout/Footer";
-import ProductCard from "@/components/common/ProductCard";
 import ProdukFoto from "@/components/produk/ProdukFoto";
 import ProdukTransaksi from "@/components/produk/ProdukTransaksi";
 import ProdukRatingForm from "@/components/produk/ProdukRatingForm";
@@ -30,9 +29,16 @@ const ProdukDetail = () => {
   const { data: produkRes, isLoading } = useProdukDetail(Number(id));
   const produk = produkRes?.data as any;
 
-  const rekomendasi: Produk[] = MOCK_PRODUK
-  .filter(p => p.kategori_id === produk?.kategori_id && p.id !== Number(id) && (!activeMart || p.produk_marts?.some((pm: any) => pm.mart_id === activeMart.id)))
-  .slice(0, 8);
+  const { data: rekomendasiRes } = useProdukList(
+    produk?.kategori_id ? { kategori_id: produk.kategori_id, per_page: 20 } : undefined
+  );
+
+  const dbRekomendasi = rekomendasiRes?.data?.data && rekomendasiRes.data.data.length > 0 ? rekomendasiRes.data.data : MOCK_PRODUK;
+
+  const rekomendasi: Produk[] = dbRekomendasi
+    .filter(p => p.kategori_id === produk?.kategori_id && p.id !== Number(id) && (!activeMart || p.produk_marts?.some((pm: any) => pm.mart_id === activeMart.id)))
+    .slice(0, 8);
+
 
   const fotoUtama: string = produk?.gambar_url || "";
   const hargaAsli: number = produk?.harga ?? 0;

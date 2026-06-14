@@ -241,11 +241,11 @@ export function calcOrderTotal(
 }
 
 // Trim semua string field di object form
-export function sanitizeForm<T extends Record<string, unknown>>(form: T): T {
+export function sanitizeForm<T extends object>(form: T): T {
   const sanitized = {} as Record<string, unknown>;
   for (const key in form) {
     if (Object.prototype.hasOwnProperty.call(form, key)) {
-      const val = form[key];
+      const val = (form as Record<string, unknown>)[key];
       if (typeof val === 'string') {
         sanitized[key] = val.trim();
       } else {

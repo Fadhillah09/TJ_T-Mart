@@ -11,5 +11,14 @@ export const resolveGambar = (produkData: any): string => {
   return '/produk_assets/no-image.png';
 };
 
-export const currency = (val: number) =>
-  'Rp ' + Math.round(val).toLocaleString('id-ID');
+export const currency = (val: number | string | undefined | null) => {
+  if (val === undefined || val === null) return 'Rp 0';
+  const numericVal = typeof val === 'number' ? val : parseFloat(String(val));
+  if (isNaN(numericVal)) return 'Rp 0';
+  
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0
+  }).format(numericVal).replace(/\u00a0/g, ' ');
+};
