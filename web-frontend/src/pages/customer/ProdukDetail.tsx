@@ -8,7 +8,7 @@ import ProdukFoto from "@/components/produk/ProdukFoto";
 import ProdukTransaksi from "@/components/produk/ProdukTransaksi";
 import ProdukRatingForm from "@/components/produk/ProdukRatingForm";
 import ProdukRatingStats from "@/components/produk/ProdukRatingStats";
-import { currency } from "@/utils/produkUtils";
+import { currency, resolveGambar } from "@/utils/produkUtils";
 import StarIcon from "@/utils/StarIcon";
 import { Produk } from "@/types";
 import { MOCK_PRODUK } from '@/data/mockHome';
@@ -40,7 +40,7 @@ const ProdukDetail = () => {
     .slice(0, 8);
 
 
-  const fotoUtama: string = produk?.gambar_url || "";
+  const fotoUtama: string = produk ? resolveGambar(produk) : "";
   const hargaAsli: number = produk?.harga ?? 0;
   const hargaDiskon =
     produk?.persentase_diskon > 0
@@ -96,15 +96,6 @@ const ProdukDetail = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb — Beranda / Nama Produk */}
           <div className="mb-4">
-            <nav className="flex text-[10px] font-semibold text-gray-500 mb-1 gap-1 items-center">
-              <Link to="/" className="hover:text-[#dc2626] transition-colors">
-                Beranda
-              </Link>
-              <span className="text-gray-300">/</span>
-              <span className="text-[#dc2626] font-extrabold truncate max-w-[300px]">
-                {produk.nama_produk}
-              </span>
-            </nav>
             <div className="flex items-center">
               <button
                 onClick={() => navigate(-1)}
@@ -133,7 +124,7 @@ const ProdukDetail = () => {
           {/* Grid utama */}
           <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 items-start">
             {/* Foto */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 max-w-[260px] mx-auto w-full">
               <ProdukFoto src={fotoUtama} alt={produk.nama_produk} />
             </div>
 
@@ -192,25 +183,25 @@ const ProdukDetail = () => {
                 </div>
               </div>
 
-              {produk.produk_marts && produk.produk_marts.length > 0 && (
+              {((produk.produk_marts && produk.produk_marts.length > 0) || (produk.produkMarts && produk.produkMarts.length > 0)) && (
                 <div className="space-y-1.5">
                   <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
                     Lokasi Ketersediaan Produk:
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {produk.produk_marts.map((pm: any, i: number) => (
+                    {(produk.produk_marts || produk.produkMarts).map((pm: any, i: number) => (
                       <span
                         key={i}
                         className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${
-                          pm.is_active
+                          pm.is_active || pm.mart?.is_active
                             ? "bg-white text-[#dc2626] border-[#dc2626] shadow-sm"
                             : "bg-gray-100 text-gray-400 border-transparent"
                         }`}
                       >
                         <span
-                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${pm.is_active ? "bg-[#dc2626] animate-pulse" : "bg-gray-300"}`}
+                          className={`w-1.5 h-1.5 rounded-full mr-1.5 ${pm.is_active || pm.mart?.is_active ? "bg-[#dc2626] animate-pulse" : "bg-gray-300"}`}
                         />
-                        {pm.nama_mart ?? pm.mart?.nama_mart}
+                        {pm.nama_mart ?? pm.mart?.nama_mart ?? "Mart Tidak Diketahui"}
                       </span>
                     ))}
                   </div>

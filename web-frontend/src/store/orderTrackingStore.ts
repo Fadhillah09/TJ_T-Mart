@@ -337,8 +337,13 @@ export const useOrderTrackingStore = create<OrderTrackingState>((set, get) => ({
   },
 
   clearNotification: (id) => {
+    const notif = get().notifications.find((n) => n.id === id);
     set((state) => ({
       notifications: state.notifications.filter((n) => n.id !== id),
     }));
+    if (notif && !notif.read) {
+      const currentUnread = useNotifStore.getState().unreadCount;
+      useNotifStore.getState().setUnreadCount(Math.max(0, currentUnread - 1));
+    }
   },
 }));

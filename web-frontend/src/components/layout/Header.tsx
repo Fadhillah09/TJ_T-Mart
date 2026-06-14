@@ -35,7 +35,7 @@ export default function Header({ isUser = true }: HeaderProps) {
   const { totalItems } = useCartStore();
   const { unreadCount } = useNotifStore();
   const { logout } = useAuth();
-  const { notifications, markNotificationsAsRead, sessions } = useOrderTrackingStore();
+  const { notifications, markNotificationsAsRead, clearNotification } = useOrderTrackingStore();
 
   const userPhoto = resolveFotoUrl(user?.foto, user?.foto_url);
   const inisialNama = user?.name
@@ -108,9 +108,11 @@ export default function Header({ isUser = true }: HeaderProps) {
                   <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100-4h10m-8 2a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  <span className="animate-badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center bg-sub-header text-white text-[9px] font-bold rounded-full ring-1 ring-white">
-                    {totalItems > 99 ? '99+' : totalItems}
-                  </span>
+                  {totalItems > 0 && (
+                    <span className="animate-badge-pulse absolute -top-1 -right-1 min-w-[16px] h-[16px] flex items-center justify-center bg-sub-header text-white text-[9px] font-bold rounded-full ring-1 ring-white">
+                      {totalItems > 99 ? '99+' : totalItems}
+                    </span>
+                  )}
                 </Link>
 
                 <div className="relative">
@@ -139,15 +141,28 @@ export default function Header({ isUser = true }: HeaderProps) {
                     <div className="absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl bg-white ring-1 ring-black/5 divide-y divide-gray-100 z-50 overflow-hidden animate-scale-pop">
                       <div className="px-4 py-3 bg-gradient-to-r from-[#5B000B] to-[#dc2626] text-white flex justify-between items-center">
                         <p className="text-xs uppercase font-black tracking-widest">Pusat Notifikasi</p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markNotificationsAsRead();
-                          }}
-                          className="text-[10px] font-bold text-red-100 hover:text-white underline cursor-pointer"
-                        >
-                          Tandai Semua Dibaca
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markNotificationsAsRead();
+                            }}
+                            className="text-[10px] font-bold text-red-100 hover:text-white underline cursor-pointer"
+                          >
+                            Dibaca
+                          </button>
+                          <span className="text-red-200">|</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              useOrderTrackingStore.setState({ notifications: [] });
+                              useNotifStore.getState().setUnreadCount(0);
+                            }}
+                            className="text-[10px] font-bold text-red-100 hover:text-white underline cursor-pointer"
+                          >
+                            Hapus Semua
+                          </button>
+                        </div>
                       </div>
                       <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
                         {notifications.length === 0 ? (
@@ -169,9 +184,23 @@ export default function Header({ isUser = true }: HeaderProps) {
                             >
                               <div className="flex justify-between items-start gap-1">
                                 <p className="font-extrabold text-[#5B000B]">{notif.title}</p>
-                                <span className="text-[9px] text-gray-400 font-medium">
-                                  {new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="text-[9px] text-gray-400 font-medium">
+                                    {new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      clearNotification(notif.id);
+                                    }}
+                                    className="text-gray-400 hover:text-red-600 transition-colors p-0.5 rounded cursor-pointer shrink-0"
+                                    title="Hapus"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
                               </div>
                               <p className="text-gray-600 mt-0.5 leading-snug font-medium line-clamp-2">{notif.message}</p>
                               <span className="text-[9px] text-red-500 font-extrabold mt-1 block">Lacak Pesanan ➔</span>
@@ -263,7 +292,7 @@ export default function Header({ isUser = true }: HeaderProps) {
             <svg className="w-5 h-5 text-[#dc2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            Cart ({totalItems})
+            Cart {totalItems > 0 && `(${totalItems})`}
           </Link>
           <button
             onClick={() => {

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useNotifStore } from '@/store/notifStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrderTrackingStore } from '@/store/orderTrackingStore';
 
 interface HomeHeaderProps {
   search: string;
@@ -20,6 +21,8 @@ export default function HomeHeader({ search, onSearchChange, onMartPickerOpen, a
   const { logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const { notifications, markNotificationsAsRead, clearNotification } = useOrderTrackingStore();
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -85,17 +88,95 @@ export default function HomeHeader({ search, onSearchChange, onMartPickerOpen, a
           </button>
 
           {/* Notifications */}
-          <button
-            onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-600"
-          >
-            <span className="material-symbols-outlined text-[22px]">notifications</span>
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-[#ba0015] text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
+          <div className="relative">
+            <button
+              onClick={() => {
+                setNotifDropdownOpen(!notifDropdownOpen);
+                setDropdownOpen(false);
+                if (!notifDropdownOpen) {
+                  markNotificationsAsRead();
+                }
+              }}
+              className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-600 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[22px]">notifications</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-[#ba0015] text-white text-[9px] font-black min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {notifDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl bg-white ring-1 ring-black/5 divide-y divide-gray-100 z-50 overflow-hidden animate-scale-pop">
+                <div className="px-4 py-3 bg-gradient-to-r from-[#ba0015] to-[#dc2626] text-white flex justify-between items-center">
+                  <p className="text-xs uppercase font-black tracking-widest text-white">Pusat Notifikasi</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markNotificationsAsRead();
+                      }}
+                      className="text-[10px] font-bold text-red-100 hover:text-white underline cursor-pointer"
+                    >
+                      Dibaca
+                    </button>
+                    <span className="text-red-200">|</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        useOrderTrackingStore.setState({ notifications: [] });
+                        useNotifStore.getState().setUnreadCount(0);
+                      }}
+                      className="text-[10px] font-bold text-red-100 hover:text-white underline cursor-pointer"
+                    >
+                      Hapus Semua
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-center text-gray-400 space-y-2">
+                      <span className="material-symbols-outlined text-[28px] mx-auto block text-gray-300">notifications_off</span>
+                      <p className="text-xs font-semibold">Tidak ada notifikasi pelacakan</p>
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        onClick={() => {
+                          setNotifDropdownOpen(false);
+                          navigate(`/order/success?order_id=${notif.orderId}`);
+                        }}
+                        className={`p-3 text-xs hover:bg-red-50/30 cursor-pointer transition-all ${!notif.read ? 'bg-red-50/60 font-bold' : ''}`}
+                      >
+                        <div className="flex justify-between items-start gap-1">
+                          <p className="font-extrabold text-[#ba0015]">{notif.title}</p>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[9px] text-gray-400 font-medium">
+                              {new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                clearNotification(notif.id);
+                              }}
+                              className="text-gray-400 hover:text-red-600 transition-colors p-0.5 rounded cursor-pointer shrink-0"
+                              title="Hapus"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-gray-600 mt-0.5 leading-snug font-medium line-clamp-2">{notif.message}</p>
+                        <span className="text-[9px] text-red-500 font-extrabold mt-1 block">Lacak Pesanan ➔</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
-          </button>
+          </div>
 
           {/* Divider */}
           <div className="w-px h-6 bg-gray-200 mx-2" />

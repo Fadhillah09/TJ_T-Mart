@@ -14,7 +14,10 @@ class WishlistController extends Controller
     {
         $wishlists = Wishlist::query()
             ->where('user_id', $request->user()->id)
-            ->with(['produk' => fn ($q) => $q->withAvg('reviews as avg_rating', 'rating')])
+            ->with(['produk' => function ($q) {
+                $q->withAvg('reviews as avg_rating', 'rating')
+                  ->with(['kategori', 'produkMarts.mart']);
+            }])
             ->latest()
             ->get();
 
@@ -45,7 +48,10 @@ class WishlistController extends Controller
             'produk_id' => $validated['produk_id'],
         ]);
 
-        $wishlist->load(['produk' => fn ($q) => $q->withAvg('reviews as avg_rating', 'rating')]);
+        $wishlist->load(['produk' => function ($q) {
+            $q->withAvg('reviews as avg_rating', 'rating')
+              ->with(['kategori', 'produkMarts.mart']);
+        }]);
 
         return $this->success($wishlist, 'Produk ditambahkan ke wishlist', 201);
     }

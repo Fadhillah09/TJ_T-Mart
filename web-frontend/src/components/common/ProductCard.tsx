@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Heart, ShoppingCart, MapPin, Star } from "lucide-react";
+import { Heart, ShoppingCart, Star } from "lucide-react";
 import { Produk } from "@/types";
 
 interface ProductCardProps {
